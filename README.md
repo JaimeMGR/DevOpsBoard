@@ -2,11 +2,11 @@
 
 Backend de una plataforma de gestión de proyectos orientada a equipos de desarrollo de software.
 
-DevOpsBoard nace como un proyecto personal de portfolio para desarrollar y demostrar experiencia práctica en tecnologías backend modernas, arquitectura por capas, persistencia relacional, autenticación, autorización, testing y, posteriormente, prácticas de DevOps y CI/CD.
+DevOpsBoard es un proyecto personal de portfolio desarrollado para demostrar experiencia práctica en backend moderno, diseño de APIs REST, arquitectura por capas, persistencia relacional, autenticación, autorización contextual, testing y, progresivamente, prácticas de DevOps y CI/CD.
 
-El objetivo del proyecto es construir progresivamente una aplicación similar, conceptualmente, a una combinación simplificada de herramientas como Jira, Linear o Trello, pero centrada en las necesidades de equipos de desarrollo.
+Conceptualmente, el proyecto busca construir una plataforma inspirada en herramientas como Jira, Linear o Trello, pero simplificada y orientada específicamente a equipos de desarrollo de software.
 
-> 🚧 **Estado del proyecto:** En desarrollo activo.
+> 🚧 **Estado del proyecto:** Backend en desarrollo activo.
 
 ---
 
@@ -15,25 +15,32 @@ El objetivo del proyecto es construir progresivamente una aplicación similar, c
 - [Descripción](#descripción)
 - [Objetivos](#objetivos)
 - [Características actuales](#características-actuales)
-- [Roadmap](#roadmap)
 - [Stack tecnológico](#stack-tecnológico)
 - [Arquitectura](#arquitectura)
 - [Estructura del proyecto](#estructura-del-proyecto)
-- [Modelo de dominio actual](#modelo-de-dominio-actual)
+- [Modelo de dominio](#modelo-de-dominio)
 - [Autenticación](#autenticación)
 - [Autorización](#autorización)
+- [Gestión de equipos](#gestión-de-equipos)
+- [Gestión de proyectos](#gestión-de-proyectos)
+- [Issues](#issues)
+- [Comentarios](#comentarios)
+- [Historial y auditoría](#historial-y-auditoría)
 - [API](#api)
 - [OpenAPI](#openapi)
+- [Manejo de errores](#manejo-de-errores)
 - [Base de datos](#base-de-datos)
 - [Migraciones](#migraciones)
 - [Docker](#docker)
 - [Configuración del entorno](#configuración-del-entorno)
 - [Puesta en marcha](#puesta-en-marcha)
-- [Tests](#tests)
+- [Testing](#testing)
 - [Flujo de una petición](#flujo-de-una-petición)
 - [Principios y decisiones de diseño](#principios-y-decisiones-de-diseño)
-- [Próximos pasos](#próximos-pasos)
+- [Roadmap](#roadmap)
+- [Seguridad](#seguridad)
 - [Autor](#autor)
+- [Licencia](#licencia)
 
 ---
 
@@ -41,115 +48,506 @@ El objetivo del proyecto es construir progresivamente una aplicación similar, c
 
 DevOpsBoard es una API REST construida con ASP.NET Core y .NET 10.
 
-La aplicación está diseñada para gestionar usuarios, equipos de desarrollo, proyectos y miembros, incorporando un sistema de autenticación y autorización basado en ASP.NET Core Identity y JWT.
+La aplicación permite gestionar:
 
-La arquitectura está dividida en varias capas con responsabilidades diferenciadas:
+- usuarios;
+- equipos;
+- miembros de equipos;
+- proyectos;
+- miembros de proyectos;
+- issues;
+- asignación de usuarios;
+- comentarios;
+- historial de cambios;
+- autorización basada en recursos.
+
+El proyecto está organizado en una arquitectura por capas con responsabilidades separadas entre API, aplicación, dominio e infraestructura.
+
+La separación principal es:
 
 ```text
-┌───────────────────────┐
-│     DevOpsBoard.Api   │
-│      HTTP / API       │
-└───────────┬───────────┘
-            │
-            ▼
-┌───────────────────────┐
-│ DevOpsBoard.Application│
-│     Use cases         │
-│ DTOs / Services       │
-└───────────┬───────────┘
-            │
-            ▼
-┌───────────────────────┐
-│   DevOpsBoard.Domain  │
-│ Entities / Enums      │
-│ Business rules        │
-└───────────┬───────────┘
-            │
-            ▲
-┌───────────┴───────────┐
-│ DevOpsBoard.Infrastructure
-│ EF Core / PostgreSQL  │
-│ Identity / JWT        │
-└───────────────────────┘
+┌─────────────────────────────┐
+│       DevOpsBoard.Api       │
+│                             │
+│ HTTP / Controllers / JWT    │
+│ OpenAPI / Middleware        │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│   DevOpsBoard.Application   │
+│                             │
+│ Use Cases / Services        │
+│ DTOs / Abstractions         │
+│ Exceptions / Security       │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│     DevOpsBoard.Domain      │
+│                             │
+│ Entities / Enums            │
+│ Business Rules              │
+└─────────────────────────────┘
+               ▲
+               │
+┌──────────────┴──────────────┐
+│ DevOpsBoard.Infrastructure  │
+│                             │
+│ EF Core / PostgreSQL        │
+│ Identity / JWT              │
+│ Repositories / AuthZ        │
+└─────────────────────────────┘
 ```
 
-El objetivo de esta separación es evitar concentrar toda la lógica de negocio en los controllers y mantener una estructura preparada para crecer a medida que se añaden nuevas funcionalidades.
+La capa de infraestructura implementa las abstracciones definidas por Application y se encarga de los detalles tecnológicos relacionados con persistencia, Identity, JWT y autorización.
 
 ---
 
 # Objetivos
 
-Los principales objetivos técnicos de DevOpsBoard son:
+Los principales objetivos técnicos del proyecto son:
 
-- Diseñar una API REST escalable y mantenible.
-- Utilizar una arquitectura por capas.
-- Aplicar principios de separación de responsabilidades.
+- Diseñar una API REST mantenible y preparada para crecer.
+- Aplicar una arquitectura por capas.
+- Separar la lógica de negocio de la infraestructura.
 - Utilizar Entity Framework Core como ORM.
 - Utilizar PostgreSQL como sistema de persistencia.
 - Utilizar Docker para el entorno de desarrollo.
-- Implementar autenticación mediante ASP.NET Core Identity y JWT.
-- Implementar autorización mediante roles globales.
+- Implementar autenticación con ASP.NET Core Identity.
+- Utilizar JWT Bearer para autenticación de peticiones.
+- Implementar roles globales mediante Identity.
 - Implementar autorización contextual basada en recursos.
-- Mantener las reglas de negocio dentro del dominio y de la capa de aplicación.
-- Utilizar DTOs para separar el dominio de los contratos HTTP.
-- Implementar manejo global de excepciones.
+- Utilizar DTOs como contratos de entrada y salida de la API.
+- Mantener las reglas importantes dentro del dominio y de la capa de aplicación.
+- Implementar manejo centralizado de excepciones.
 - Utilizar `ProblemDetails` para respuestas de error consistentes.
-- Escribir tests automatizados.
-- Añadir posteriormente integración continua y despliegue automatizado.
-- Utilizar el proyecto como entorno de aprendizaje y experimentación con buenas prácticas backend y DevOps.
+- Mantener una suite de tests automatizados.
+- Aplicar migraciones de Entity Framework Core.
+- Construir progresivamente una base preparada para CI/CD y observabilidad.
 
 ---
 
 # Características actuales
 
-Actualmente el proyecto dispone de una primera versión funcional del backend.
+Actualmente existe una primera versión funcional del backend.
 
-## Usuarios
+Las funcionalidades implementadas son:
 
-Se utiliza ASP.NET Core Identity para gestionar usuarios.
+```text
+Authentication
+    ↓
+Teams
+    ↓
+Team Members
+    ↓
+Projects
+    ↓
+Project Members
+    ↓
+Issues
+    ├── Assignment
+    ├── Status
+    ├── Priority
+    ├── Soft Delete
+    ├── Resource Authorization
+    │
+    ├── Comments
+    │
+    └── History / Audit
+```
 
-Actualmente se soporta:
+Además, el proyecto dispone de:
 
-- Registro.
-- Inicio de sesión.
-- Validación de contraseña.
-- Usuario activo/inactivo.
-- Consulta del usuario autenticado.
-- Roles globales.
-- Persistencia de usuarios en PostgreSQL.
+```text
+JWT Authentication
+ASP.NET Core Identity
+Global Roles
+Resource-based Authorization
+PostgreSQL
+Entity Framework Core
+Docker Compose
+OpenAPI
+ProblemDetails
+Global Exception Handler
+Unit Tests
+EF Core Migrations
+```
 
-Endpoint principal:
+La suite actual cuenta con:
 
-```http
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
+```text
+85 tests
+```
+
+Todos los tests existentes deben mantenerse pasando antes de considerar estable un cambio importante.
+
+---
+
+# Stack tecnológico
+
+## Backend
+
+- C#
+- .NET 10
+- ASP.NET Core
+- ASP.NET Core Identity
+- JWT Bearer Authentication
+- Entity Framework Core 10
+
+## Base de datos
+
+- PostgreSQL 18
+
+## Infraestructura
+
+- Docker
+- Docker Compose
+
+## Testing
+
+- xUnit
+
+## API documentation
+
+- OpenAPI
+- OpenAPI 3.1.1
+
+## Control de versiones
+
+- Git
+- GitHub
+
+---
+
+# Arquitectura
+
+DevOpsBoard utiliza una arquitectura por capas.
+
+```text
+DevOpsBoard.Api
+        │
+        ▼
+DevOpsBoard.Application
+        │
+        ▼
+DevOpsBoard.Domain
+
+DevOpsBoard.Infrastructure
+        │
+        ├── implementa abstracciones de Application
+        └── utiliza Domain
+```
+
+Las dependencias se mantienen orientadas hacia el dominio.
+
+El dominio no depende directamente de:
+
+```text
+Entity Framework Core
+PostgreSQL
+ASP.NET Core Identity
+JWT
+```
+
+Esto permite aislar las reglas principales del negocio de los detalles de infraestructura.
+
+---
+
+# DevOpsBoard.Api
+
+Responsabilidades:
+
+- Exponer endpoints HTTP.
+- Recibir requests.
+- Validar y enlazar modelos HTTP.
+- Obtener la identidad del usuario autenticado.
+- Devolver responses HTTP.
+- Configurar autenticación.
+- Configurar OpenAPI.
+- Configurar middleware.
+- Gestionar el pipeline de ASP.NET Core.
+
+Controllers actuales:
+
+```text
+AuthController
+HealthController
+
+TeamsController
+TeamMembersController
+
+ProjectsController
+ProjectMembersController
+
+IssuesController
+IssueCommentsController
+IssueHistoryController
 ```
 
 ---
 
-## Autenticación JWT
+# DevOpsBoard.Application
 
-Tras iniciar sesión correctamente, la API genera un JSON Web Token (JWT).
+Contiene los casos de uso y las abstracciones que necesita la aplicación.
 
-El token contiene información relacionada con la identidad del usuario y sus roles.
+Estructura:
+
+```text
+Application/
+├── Abstractions/
+├── DTOs/
+├── Exceptions/
+├── Security/
+└── Services/
+```
+
+Entre las abstracciones actuales se encuentran:
+
+```text
+IAuthService
+
+ITeamRepository
+ITeamService
+ITeamMemberRepository
+ITeamMemberService
+ITeamAuthorizationService
+
+IProjectRepository
+IProjectService
+IProjectAuthorizationService
+IProjectMemberRepository
+IProjectMemberService
+IProjectMemberAuthorizationService
+
+IIssueRepository
+IIssueService
+IIssueAuthorizationService
+
+IIssueCommentRepository
+IIssueCommentService
+ICommentAuthorizationService
+
+IIssueHistoryRepository
+IIssueHistoryService
+
+IUserRepository
+```
+
+Servicios principales:
+
+```text
+TeamService
+TeamMemberService
+
+ProjectService
+ProjectMemberService
+
+IssueService
+IssueCommentService
+IssueHistoryService
+```
+
+---
+
+# DevOpsBoard.Domain
+
+La capa de dominio contiene las entidades y enums fundamentales.
+
+Entidades actuales:
+
+```text
+Entities/
+├── Issue.cs
+├── IssueComment.cs
+├── IssueHistory.cs
+├── Project.cs
+├── ProjectMember.cs
+├── Team.cs
+└── TeamMember.cs
+```
+
+Enums actuales:
+
+```text
+Enums/
+├── IssueHistoryAction.cs
+├── IssuePriority.cs
+├── IssueStatus.cs
+├── ProjectRole.cs
+└── TeamRole.cs
+```
+
+Las entidades utilizan setters privados para limitar modificaciones arbitrarias desde otras capas.
+
+Ejemplo simplificado:
+
+```csharp
+public class Issue
+{
+    public Guid Id { get; private set; }
+
+    public Guid ProjectId { get; private set; }
+
+    public string Title { get; private set; } = string.Empty;
+
+    public IssueStatus Status { get; private set; }
+
+    public IssuePriority Priority { get; private set; }
+}
+```
+
+Las modificaciones relevantes se realizan mediante métodos de dominio.
+
+Por ejemplo:
+
+```text
+Issue.Update(...)
+Issue.ChangeStatus(...)
+Issue.ChangePriority(...)
+Issue.AssignTo(...)
+Issue.Unassign(...)
+Issue.Delete(...)
+```
+
+En el caso de `IssueComment`:
+
+```text
+IssueComment.UpdateContent(...)
+```
+
+---
+
+# DevOpsBoard.Infrastructure
+
+La infraestructura contiene las implementaciones concretas de los mecanismos definidos mediante abstracciones en Application.
+
+Responsabilidades actuales:
+
+- Persistencia con Entity Framework Core.
+- Acceso a PostgreSQL.
+- ASP.NET Core Identity.
+- Generación y validación de JWT.
+- Repositorios.
+- Configuraciones EF Core.
+- Autorización contextual.
+- Migraciones.
+
+Estructura:
+
+```text
+Infrastructure/
+├── Authorization/
+│
+├── Identity/
+│
+└── Persistence/
+    ├── Configurations/
+    ├── Migrations/
+    └── Repositories/
+```
+
+Servicios de autorización actuales:
+
+```text
+TeamAuthorizationService
+ProjectAuthorizationService
+ProjectMemberAuthorizationService
+IssueAuthorizationService
+CommentAuthorizationService
+```
+
+---
+
+# Modelo de dominio
+
+El modelo de dominio actual puede simplificarse de la siguiente manera:
+
+```text
+                         ApplicationUser
+                               │
+                 ┌─────────────┼─────────────┐
+                 │             │             │
+                 ▼             ▼             ▼
+            TeamMember   ProjectMember   Issues / History
+                 │             │
+                 ▼             ▼
+                Team        Project
+                               │
+                               ▼
+                              Issue
+                         ┌──────┴──────┐
+                         │             │
+                         ▼             ▼
+                    Comments       History
+```
+
+Relaciones principales:
+
+```text
+ApplicationUser
+    │
+    ├── TeamMember ──────> Team
+    │
+    ├── ProjectMember ───> Project
+    │
+    ├── ReporterId ──────> Issue
+    │
+    ├── AssigneeId ──────> Issue
+    │
+    ├── AuthorId ────────> IssueComment
+    │
+    └── ActorId ─────────> IssueHistory
+```
+
+Además:
+
+```text
+Team.CreatedByUserId ──> AspNetUsers.Id
+
+Project.OwnerId ───────> AspNetUsers.Id
+```
+
+---
+
+# Autenticación
+
+La autenticación combina:
+
+```text
+ASP.NET Core Identity
+        +
+JWT Bearer Authentication
+```
+
+Identity gestiona:
+
+- usuarios;
+- contraseñas;
+- roles;
+- validación de credenciales;
+- persistencia de usuarios.
+
+Después de un login correcto, la aplicación genera un JWT.
 
 Flujo:
 
 ```text
-Usuario
+Cliente
+   │
+   │ POST /api/auth/login
+   ▼
+AuthController
    │
    ▼
-POST /api/auth/login
+AuthService
    │
    ▼
 ASP.NET Core Identity
    │
-   ├── Usuario existe
-   └── Contraseña válida
-   │
+   │ credenciales válidas
    ▼
-JWT Token Generator
+JwtTokenGenerator
    │
    ▼
 Access Token
@@ -161,11 +559,21 @@ Las peticiones protegidas utilizan:
 Authorization: Bearer <token>
 ```
 
+La identidad del usuario se obtiene desde claims del JWT.
+
+La aplicación utiliza principalmente:
+
+```text
+ClaimTypes.NameIdentifier
+```
+
+para obtener el identificador del usuario autenticado.
+
 ---
 
-## Roles globales
+# Roles globales
 
-Actualmente existen cuatro roles globales:
+La aplicación dispone actualmente de cuatro roles globales:
 
 ```text
 ADMIN
@@ -174,100 +582,43 @@ DEVELOPER
 VIEWER
 ```
 
-Estos roles son gestionados mediante ASP.NET Core Identity.
+Estos roles se gestionan mediante ASP.NET Core Identity.
 
-La aplicación incluye un seeder para crear automáticamente los roles cuando son necesarios.
+Los nombres se centralizan en:
+
+```text
+apps/DevOpsBoard.Application/Security/RoleNames.cs
+```
+
+El proyecto incluye un seeder de Identity encargado de crear los roles cuando no existen.
+
+El rol `ADMIN` se utiliza para otorgar acceso administrativo global.
 
 ---
 
-# Equipos
+# Autorización
 
-Los equipos representan grupos de usuarios dentro de la plataforma.
+Uno de los aspectos fundamentales de DevOpsBoard es la combinación de roles globales con autorización contextual.
 
-Actualmente se puede:
-
-- Crear equipos.
-- Listar equipos.
-- Consultar un equipo concreto.
-- Registrar quién creó un equipo.
-- Gestionar miembros.
-- Asignar roles dentro del equipo.
-- Modificar roles de los miembros.
-- Eliminar miembros.
-- Aplicar autorización contextual.
-
-Endpoints actuales:
-
-```http
-GET  /api/teams
-GET  /api/teams/{id}
-POST /api/teams
-```
-
----
-
-# Miembros de equipos
-
-La relación entre usuarios y equipos se representa mediante `TeamMember`.
-
-Cada miembro contiene:
+No se comprueba únicamente:
 
 ```text
-TeamId
-UserId
-Role
-JoinedAt
+¿El usuario tiene el rol ADMIN?
 ```
 
-Los roles disponibles actualmente son:
+También puede comprobarse:
 
 ```text
-Member
-Lead
+¿El usuario es miembro de este proyecto?
+
+¿Qué ProjectRole tiene?
+
+¿Es propietario de este recurso?
+
+¿Es el autor de este comentario?
 ```
 
-Endpoints actuales:
-
-```http
-GET    /api/teams/{teamId}/members
-POST   /api/teams/{teamId}/members
-PATCH  /api/teams/{teamId}/members/{userId}
-DELETE /api/teams/{teamId}/members/{userId}
-```
-
-La tabla utiliza una clave primaria compuesta:
-
-```text
-TeamId + UserId
-```
-
-Esto impide que el mismo usuario pueda pertenecer dos veces al mismo equipo.
-
----
-
-# Autorización contextual
-
-Una de las decisiones de diseño del proyecto es no limitar la autorización exclusivamente a roles globales.
-
-Por ejemplo:
-
-```text
-ADMIN
-    ↓
-Puede gestionar cualquier equipo.
-
-LEAD
-    ↓
-Puede gestionar miembros de los equipos
-    en los que tiene el rol Lead.
-
-MEMBER
-    ↓
-Puede consultar el equipo,
-pero no gestionar sus miembros.
-```
-
-Esto permite diferenciar entre:
+Esto permite distinguir entre:
 
 ```text
 Rol global
@@ -276,377 +627,917 @@ Rol global
 y:
 
 ```text
-Rol dentro de un recurso.
+Rol contextual dentro de un recurso
+```
+
+---
+
+## Project Roles
+
+Los proyectos utilizan actualmente:
+
+```text
+Viewer
+Developer
+Manager
+```
+
+De forma simplificada:
+
+```text
+Viewer
+    ↓
+Lectura
+
+Developer
+    ↓
+Lectura
+Creación de Issues
+Modificación de Issues
+Gestión de comentarios propios
+
+Manager
+    ↓
+Lectura
+Creación / modificación de Issues
+Gestión de comentarios
+Gestión de miembros del proyecto
+Eliminación de Issues
+```
+
+El propietario de un proyecto también dispone de permisos de gestión.
+
+`ADMIN` tiene acceso administrativo global.
+
+Las reglas concretas se implementan en servicios de autorización, no directamente en los controllers.
+
+---
+
+# Gestión de equipos
+
+Los equipos representan grupos de usuarios dentro de la plataforma.
+
+Actualmente permiten:
+
+- crear equipos;
+- listar equipos;
+- consultar un equipo;
+- gestionar miembros;
+- asignar roles;
+- modificar roles;
+- eliminar miembros.
+
+Los roles de equipo actuales son:
+
+```text
+Member
+Lead
+```
+
+Un `Lead` puede gestionar miembros del equipo correspondiente.
+
+Un usuario puede tener un rol diferente en diferentes equipos.
+
+---
+
+# Teams API
+
+## Listar equipos
+
+```http
+GET /api/teams
+Authorization: Bearer <JWT>
+```
+
+## Obtener un equipo
+
+```http
+GET /api/teams/{teamId}
+Authorization: Bearer <JWT>
+```
+
+## Crear un equipo
+
+```http
+POST /api/teams
+Authorization: Bearer <JWT>
+Content-Type: application/json
 ```
 
 Ejemplo:
 
-```text
-Usuario
-└── TeamMember
-      ├── Team = DevOps
-      └── Role = Lead
-```
-
-Por tanto, un usuario puede ser `Lead` en un equipo y no tener ninguna capacidad especial sobre otro equipo.
-
----
-
-# Stack tecnológico
-
-## Backend
-
-- .NET 10
-- ASP.NET Core
-- ASP.NET Core Identity
-- JWT Bearer Authentication
-- Entity Framework Core 10
-- C#
-
-## Base de datos
-
-- PostgreSQL 18
-
-## Infraestructura de desarrollo
-
-- Docker
-- Docker Compose
-
-## Testing
-
-- xUnit
-
-## API documentation
-
-- OpenAPI 3.1.1
-- OpenAPI nativo de ASP.NET Core
-
-## Control de versiones
-
-- Git
-- GitHub
-
----
-
-# Arquitectura
-
-DevOpsBoard utiliza una arquitectura dividida en cuatro proyectos principales y un proyecto de tests.
-
-```text
-DevOpsBoard.Api
-        │
-        ▼
-DevOpsBoard.Application
-        │
-        ▼
-DevOpsBoard.Domain
-        ▲
-        │
-DevOpsBoard.Infrastructure
-```
-
-La dependencia conceptual es:
-
-```text
-API
- ↓
-Application
- ↓
-Domain
-
-Infrastructure
- ├── implementa las abstracciones de Application
- └── utiliza Domain
-```
-
-El dominio no depende directamente de Entity Framework Core, PostgreSQL ni ASP.NET Identity.
-
----
-
-# DevOpsBoard.Api
-
-Responsabilidad principal:
-
-- Exponer endpoints HTTP.
-- Recibir requests.
-- Devolver responses.
-- Gestionar autenticación y autorización HTTP.
-- Configurar ASP.NET Core.
-- Exponer OpenAPI.
-- Registrar middleware.
-
-Actualmente contiene:
-
-```text
-Controllers/
-Extensions/
-Program.cs
-Properties/
-appsettings.json
-```
-
-Controllers principales:
-
-```text
-AuthController
-HealthController
-TeamsController
-TeamMembersController
-```
-
----
-
-# DevOpsBoard.Application
-
-Contiene la lógica de aplicación y las abstracciones necesarias para ejecutar los casos de uso.
-
-Actualmente contiene:
-
-```text
-Abstractions/
-DTOs/
-Exceptions/
-Security/
-Services/
-```
-
-Ejemplos:
-
-```text
-ITeamRepository
-ITeamService
-ITeamMemberRepository
-ITeamMemberService
-IUserRepository
-ITeamAuthorizationService
-```
-
-Servicios:
-
-```text
-TeamService
-TeamMemberService
-```
-
----
-
-# DevOpsBoard.Domain
-
-Contiene las entidades y reglas fundamentales del dominio.
-
-Actualmente:
-
-```text
-Entities/
-├── Project.cs
-├── ProjectMember.cs
-├── Team.cs
-└── TeamMember.cs
-
-Enums/
-├── ProjectRole.cs
-└── TeamRole.cs
-```
-
-La capa de dominio intenta mantenerse independiente de frameworks de infraestructura.
-
-Ejemplo:
-
-```csharp
-public class Team
+```json
 {
-    public Guid Id { get; private set; }
-
-    public string Name { get; private set; } = string.Empty;
-
-    public string? Description { get; private set; }
-
-    public string? CreatedByUserId { get; private set; }
-
-    public DateTime CreatedAt { get; private set; }
+  "name": "Backend",
+  "description": "Equipo encargado del backend"
 }
 ```
 
-Las propiedades utilizan setters privados para reducir modificaciones arbitrarias desde fuera de la entidad.
+El creador no se recibe desde el cliente.
 
----
-
-# DevOpsBoard.Infrastructure
-
-Contiene implementaciones relacionadas con:
-
-- Persistencia.
-- Entity Framework Core.
-- PostgreSQL.
-- ASP.NET Identity.
-- JWT.
-- Autorización.
-- Repositorios.
-
-Estructura actual:
+La aplicación obtiene el usuario autenticado desde el JWT:
 
 ```text
-Infrastructure/
-├── Authorization/
-├── Identity/
-└── Persistence/
-    ├── Configurations/
-    ├── Migrations/
-    └── Repositories/
+JWT
+ ↓
+ClaimTypes.NameIdentifier
+ ↓
+UserId
+ ↓
+Team.CreatedByUserId
 ```
 
 ---
 
-# Modelo de dominio actual
+# Team Members API
 
-El modelo actual puede representarse de forma simplificada así:
+## Listar miembros
 
-```text
-                ┌───────────────┐
-                │   User        │
-                │ AspNetUsers   │
-                └───────┬───────┘
-                        │
-             ┌──────────┴──────────┐
-             │                     │
-             ▼                     ▼
-       ┌───────────┐        ┌────────────┐
-       │TeamMember │        │ProjectMember
-       └─────┬─────┘        └──────┬─────┘
-             │                     │
-             ▼                     ▼
-       ┌───────────┐        ┌────────────┐
-       │   Team    │        │  Project   │
-       └───────────┘        └────────────┘
+```http
+GET /api/teams/{teamId}/members
+Authorization: Bearer <JWT>
 ```
 
-Actualmente existen las siguientes relaciones principales:
+Respuesta:
 
-```text
-ApplicationUser
-      │
-      ├── TeamMember ──> Team
-      │
-      └── ProjectMember ──> Project
+```json
+[
+  {
+    "userId": "00000000-0000-0000-0000-000000000000",
+    "displayName": "Example User",
+    "email": "user@example.local",
+    "role": "Lead",
+    "joinedAt": "2026-09-11T17:00:00Z"
+  }
+]
 ```
 
-Además:
+## Añadir miembro
+
+```http
+POST /api/teams/{teamId}/members
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+```json
+{
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "role": "Member"
+}
+```
+
+## Modificar rol
+
+```http
+PATCH /api/teams/{teamId}/members/{userId}
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+```json
+{
+  "role": "Lead"
+}
+```
+
+## Eliminar miembro
+
+```http
+DELETE /api/teams/{teamId}/members/{userId}
+Authorization: Bearer <JWT>
+```
+
+Respuesta correcta:
+
+```http
+204 No Content
+```
+
+La relación utiliza una clave primaria compuesta:
 
 ```text
-Project.OwnerId ──> AspNetUsers.Id
-Team.CreatedByUserId ──> AspNetUsers.Id
+TeamId + UserId
+```
+
+Esto evita duplicar una misma membresía.
+
+---
+
+# Gestión de proyectos
+
+Los proyectos representan unidades de trabajo dentro de la plataforma.
+
+Cada proyecto dispone de:
+
+```text
+Id
+Name
+Key
+Description
+CreatedAt
+OwnerId
+```
+
+La `Key` se normaliza en mayúsculas.
+
+Ejemplo:
+
+```text
+dbapi
+```
+
+se almacena como:
+
+```text
+DBAPI
+```
+
+La clave del proyecto es única.
+
+---
+
+# Projects API
+
+## Listar proyectos
+
+```http
+GET /api/projects
+Authorization: Bearer <JWT>
+```
+
+## Obtener un proyecto
+
+```http
+GET /api/projects/{projectId}
+Authorization: Bearer <JWT>
+```
+
+## Crear un proyecto
+
+```http
+POST /api/projects
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "name": "DevOpsBoard API",
+  "key": "DBAPI",
+  "description": "Backend principal de DevOpsBoard"
+}
+```
+
+El propietario se obtiene desde el usuario autenticado.
+
+## Modificar un proyecto
+
+```http
+PATCH /api/projects/{projectId}
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "name": "DevOpsBoard API Updated",
+  "description": "Descripción actualizada"
+}
+```
+
+## Eliminar un proyecto
+
+```http
+DELETE /api/projects/{projectId}
+Authorization: Bearer <JWT>
+```
+
+Respuesta:
+
+```http
+204 No Content
+```
+
+La modificación y eliminación del proyecto utilizan autorización contextual.
+
+---
+
+# Project Members
+
+Los miembros de proyecto se representan mediante:
+
+```text
+ProjectMember
+```
+
+Cada relación contiene:
+
+```text
+ProjectId
+UserId
+Role
+JoinedAt
+```
+
+Los roles actuales:
+
+```text
+Viewer
+Developer
+Manager
 ```
 
 ---
 
-# Autenticación
+# Project Members API
 
-La autenticación utiliza dos componentes principales:
+## Listar miembros
 
-```text
-ASP.NET Core Identity
-        +
-JWT Bearer
+```http
+GET /api/projects/{projectId}/members
+Authorization: Bearer <JWT>
 ```
 
-Identity es responsable de:
+## Añadir miembro
 
-- Crear usuarios.
-- Gestionar contraseñas.
-- Gestionar roles.
-- Validar credenciales.
-- Persistir información de usuarios.
+```http
+POST /api/projects/{projectId}/members
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
 
-JWT es responsable de transportar la identidad del usuario entre peticiones.
+Ejemplo:
+
+```json
+{
+  "userId": "00000000-0000-0000-0000-000000000000",
+  "role": "Developer"
+}
+```
+
+## Modificar rol
+
+```http
+PATCH /api/projects/{projectId}/members/{userId}
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "role": "Manager"
+}
+```
+
+## Eliminar miembro
+
+```http
+DELETE /api/projects/{projectId}/members/{userId}
+Authorization: Bearer <JWT>
+```
+
+Respuesta:
+
+```http
+204 No Content
+```
+
+La membresía utiliza:
+
+```text
+PK(ProjectId, UserId)
+```
 
 ---
 
-# Autorización
+# Issues
 
-La autorización combina dos niveles.
+Las Issues representan unidades de trabajo dentro de un proyecto.
 
-## Autorización global
+Cada Issue contiene actualmente:
 
-Gestionada mediante roles de Identity:
+```text
+Id
+ProjectId
+Title
+Description
+Status
+Priority
+ReporterId
+AssigneeId
+CreatedAt
+UpdatedAt
+IsDeleted
+DeletedAt
+```
+
+---
+
+## Estados
+
+Actualmente existen:
+
+```text
+Todo
+InProgress
+InReview
+Done
+```
+
+---
+
+## Prioridades
+
+Actualmente existen:
+
+```text
+Low
+Medium
+High
+Critical
+```
+
+---
+
+## Creación
+
+Una Issue se crea proporcionando:
+
+```text
+Title
+Description
+Priority
+```
+
+El sistema establece automáticamente:
+
+```text
+Status = Todo
+ReporterId = usuario autenticado
+CreatedAt = UTC
+UpdatedAt = UTC
+```
+
+El proyecto debe existir y el usuario debe disponer de permisos para crear Issues en él.
+
+---
+
+# Issues API
+
+## Listar Issues
+
+```http
+GET /api/projects/{projectId}/issues
+Authorization: Bearer <JWT>
+```
+
+## Obtener una Issue
+
+```http
+GET /api/projects/{projectId}/issues/{issueId}
+Authorization: Bearer <JWT>
+```
+
+## Crear una Issue
+
+```http
+POST /api/projects/{projectId}/issues
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "title": "Implementar autenticación JWT",
+  "description": "Completar el flujo de autenticación de la API",
+  "priority": "High"
+}
+```
+
+## Modificar una Issue
+
+```http
+PATCH /api/projects/{projectId}/issues/{issueId}
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "title": "Implementar autenticación JWT",
+  "description": "JWT terminado y probado",
+  "status": "InProgress",
+  "priority": "Critical",
+  "assigneeId": "00000000-0000-0000-0000-000000000000"
+}
+```
+
+También se puede eliminar la asignación:
+
+```json
+{
+  "title": "Implementar autenticación JWT",
+  "description": "JWT terminado y probado",
+  "status": "InReview",
+  "priority": "High",
+  "assigneeId": null
+}
+```
+
+## Eliminar una Issue
+
+```http
+DELETE /api/projects/{projectId}/issues/{issueId}
+Authorization: Bearer <JWT>
+```
+
+Respuesta:
+
+```http
+204 No Content
+```
+
+La eliminación es un **soft delete**.
+
+La Issue no se borra físicamente de la base de datos.
+
+Se establece:
+
+```text
+IsDeleted = true
+DeletedAt = timestamp
+```
+
+Las consultas normales utilizan un filtro global de EF Core para ocultar Issues eliminadas.
+
+---
+
+# Autorización de Issues
+
+La autorización de Issues está separada de los controllers.
+
+Actualmente se distinguen permisos de:
+
+```text
+View
+Create
+Modify
+Delete
+```
+
+De forma simplificada:
 
 ```text
 ADMIN
-MANAGER
-DEVELOPER
-VIEWER
+    → acceso global
+
+Owner del proyecto
+    → acceso de gestión
+
+Manager
+    → lectura
+    → creación
+    → modificación
+    → eliminación
+
+Developer
+    → lectura
+    → creación
+    → modificación
+
+Viewer
+    → lectura
+```
+
+Un usuario que no pertenece al proyecto no puede acceder a sus Issues.
+
+---
+
+# Comentarios
+
+Las Issues pueden tener comentarios independientes.
+
+Entidad:
+
+```text
+IssueComment
+```
+
+Cada comentario contiene:
+
+```text
+Id
+IssueId
+AuthorId
+Content
+CreatedAt
+UpdatedAt
+```
+
+Los datos del autor se enriquecen en las lecturas con:
+
+```text
+DisplayName
+Email
+```
+
+---
+
+# Comments API
+
+## Listar comentarios
+
+```http
+GET /api/projects/{projectId}/issues/{issueId}/comments
+Authorization: Bearer <JWT>
+```
+
+Respuesta:
+
+```json
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "authorId": "00000000-0000-0000-0000-000000000000",
+    "authorDisplayName": "Developer",
+    "authorEmail": "developer@example.local",
+    "content": "Comentario de prueba",
+    "createdAt": "2026-09-11T22:13:34Z",
+    "updatedAt": "2026-09-11T22:13:34Z"
+  }
+]
+```
+
+## Crear comentario
+
+```http
+POST /api/projects/{projectId}/issues/{issueId}/comments
+Authorization: Bearer <JWT>
+Content-Type: application/json
 ```
 
 Ejemplo:
 
-```csharp
-[Authorize(Roles = RoleNames.Admin)]
+```json
+{
+  "content": "Primer comentario"
+}
 ```
 
-## Autorización contextual
+El autor se obtiene desde el usuario autenticado.
 
-Gestionada mediante información específica del recurso.
+## Modificar comentario
+
+```http
+PATCH /api/projects/{projectId}/issues/{issueId}/comments/{commentId}
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "content": "Comentario actualizado"
+}
+```
+
+## Eliminar comentario
+
+```http
+DELETE /api/projects/{projectId}/issues/{issueId}/comments/{commentId}
+Authorization: Bearer <JWT>
+```
+
+Respuesta:
+
+```http
+204 No Content
+```
+
+---
+
+# Autorización de comentarios
+
+La gestión de comentarios utiliza una autorización específica.
+
+De forma simplificada:
+
+```text
+Viewer
+    → leer
+
+Developer
+    → leer
+    → crear
+    → modificar sus propios comentarios
+    → eliminar sus propios comentarios
+
+Manager
+    → leer
+    → crear
+    → modificar comentarios
+    → eliminar comentarios
+
+Owner
+    → acceso de gestión
+
+ADMIN
+    → acceso global
+```
+
+Los desarrolladores no pueden modificar ni eliminar comentarios pertenecientes a otros usuarios.
+
+Managers y propietarios pueden gestionar comentarios ajenos.
+
+---
+
+# Historial y auditoría
+
+DevOpsBoard incluye un sistema de historial para registrar cambios importantes sobre las Issues.
+
+Entidad:
+
+```text
+IssueHistory
+```
+
+Cada entrada contiene:
+
+```text
+Id
+IssueId
+ActorId
+CorrelationId
+Action
+OldValue
+NewValue
+CreatedAt
+```
+
+El actor identifica al usuario que realizó la operación.
+
+El historial también devuelve:
+
+```text
+ActorDisplayName
+ActorEmail
+```
+
+para facilitar el consumo desde clientes.
+
+---
+
+# Tipos de eventos
+
+Actualmente existen:
+
+```text
+Created
+
+TitleChanged
+DescriptionChanged
+StatusChanged
+PriorityChanged
+
+Assigned
+Unassigned
+
+CommentAdded
+CommentEdited
+CommentDeleted
+
+Deleted
+```
+
+---
+
+# CorrelationId
+
+Las operaciones que generan varios cambios comparten un mismo:
+
+```text
+CorrelationId
+```
+
+Por ejemplo, una única petición `PATCH` puede generar:
+
+```text
+StatusChanged
+PriorityChanged
+Assigned
+```
+
+Los tres eventos comparten el mismo `CorrelationId`.
+
+Esto permite reconstruir una única operación aunque haya producido múltiples eventos.
 
 Ejemplo:
 
 ```text
-Usuario
-  ↓
-TeamMember
-  ↓
-TeamRole = Lead
-  ↓
-Team específico
+PATCH Issue
+    │
+    ├── StatusChanged
+    │       CorrelationId = A
+    │
+    ├── PriorityChanged
+    │       CorrelationId = A
+    │
+    └── Assigned
+            CorrelationId = A
 ```
 
-La aplicación puede comprobar así si el usuario tiene permisos sobre un equipo concreto.
+Una nueva petición genera otro identificador:
+
+```text
+PATCH Issue
+    │
+    ├── StatusChanged
+    │       CorrelationId = B
+    │
+    └── Unassigned
+            CorrelationId = B
+```
 
 ---
 
-# Manejo de errores
+# Historial de comentarios
 
-DevOpsBoard utiliza un handler global de excepciones.
+Los comentarios también forman parte de la auditoría.
 
-```text
-Exception
-    │
-    ▼
-GlobalExceptionHandler
-    │
-    ▼
-ProblemDetails
-```
-
-Las excepciones de aplicación se traducen a códigos HTTP.
-
-Actualmente:
+Crear un comentario:
 
 ```text
-ValidationException
-→ 400 Bad Request
-
-NotFoundException
-→ 404 Not Found
-
-ConflictException
-→ 409 Conflict
-
-UnauthorizedAccessException
-→ 401 Unauthorized
-
-ForbiddenException
-→ 403 Forbidden
-
-Otras excepciones
-→ 500 Internal Server Error
+CommentAdded
 ```
 
-Esto evita duplicar bloques `try/catch` en todos los controllers.
+Modificar:
+
+```text
+CommentEdited
+```
+
+Eliminar:
+
+```text
+CommentDeleted
+```
+
+En `CommentDeleted`, el sistema conserva el contenido anterior en:
+
+```text
+OldValue
+```
+
+Esto permite saber qué contenido fue eliminado incluso después de eliminar físicamente el comentario.
 
 ---
 
-# API
+# History API
 
-## Health check
+## Consultar historial
+
+```http
+GET /api/projects/{projectId}/issues/{issueId}/history
+Authorization: Bearer <JWT>
+```
+
+Ejemplo de respuesta:
+
+```json
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "actorId": "00000000-0000-0000-0000-000000000000",
+    "actorDisplayName": "Jaime",
+    "actorEmail": "jaime@example.local",
+    "action": "Created",
+    "oldValue": null,
+    "newValue": null,
+    "correlationId": "00000000-0000-0000-0000-000000000000",
+    "createdAt": "2026-09-11T20:28:11Z"
+  }
+]
+```
+
+El acceso al historial también utiliza autorización contextual.
+
+Los usuarios pertenecientes al proyecto pueden consultar la auditoría de sus Issues según las reglas de acceso del recurso.
+
+---
+
+# Health Check
 
 ```http
 GET /api/health
@@ -663,7 +1554,7 @@ Respuesta:
 
 ---
 
-# Authentication
+# Authentication API
 
 ## Register
 
@@ -691,8 +1582,6 @@ Respuesta:
 }
 ```
 
----
-
 ## Login
 
 ```http
@@ -709,16 +1598,14 @@ Ejemplo:
 }
 ```
 
----
-
-## Current user
+## Current User
 
 ```http
 GET /api/auth/me
 Authorization: Bearer <JWT>
 ```
 
-Ejemplo de respuesta:
+Ejemplo:
 
 ```json
 {
@@ -733,154 +1620,23 @@ Ejemplo de respuesta:
 
 ---
 
-# Teams API
-
-## Obtener equipos
-
-```http
-GET /api/teams
-Authorization: Bearer <JWT>
-```
-
----
-
-## Obtener un equipo
-
-```http
-GET /api/teams/{id}
-Authorization: Bearer <JWT>
-```
-
----
-
-## Crear equipo
-
-```http
-POST /api/teams
-Authorization: Bearer <JWT>
-Content-Type: application/json
-```
-
-Ejemplo:
-
-```json
-{
-  "name": "Backend",
-  "description": "Equipo encargado del backend"
-}
-```
-
-El creador del equipo no se recibe desde el cliente.
-
-La aplicación obtiene el identificador del usuario autenticado desde el JWT:
-
-```text
-JWT
- ↓
-ClaimTypes.NameIdentifier
- ↓
-UserId
- ↓
-Team.CreatedByUserId
-```
-
----
-
-# Team Members API
-
-## Listar miembros
-
-```http
-GET /api/teams/{teamId}/members
-Authorization: Bearer <JWT>
-```
-
-Ejemplo de respuesta:
-
-```json
-[
-  {
-    "userId": "00000000-0000-0000-0000-000000000000",
-    "displayName": "Example User",
-    "email": "user@example.local",
-    "role": "Lead",
-    "joinedAt": "2026-09-11T17:00:00Z"
-  }
-]
-```
-
----
-
-## Añadir miembro
-
-```http
-POST /api/teams/{teamId}/members
-Authorization: Bearer <JWT>
-Content-Type: application/json
-```
-
-Ejemplo:
-
-```json
-{
-  "userId": "00000000-0000-0000-0000-000000000000",
-  "role": "Member"
-}
-```
-
-Roles disponibles:
-
-```text
-Member
-Lead
-```
-
----
-
-## Modificar rol
-
-```http
-PATCH /api/teams/{teamId}/members/{userId}
-Authorization: Bearer <JWT>
-Content-Type: application/json
-```
-
-Ejemplo:
-
-```json
-{
-  "role": "Lead"
-}
-```
-
----
-
-## Eliminar miembro
-
-```http
-DELETE /api/teams/{teamId}/members/{userId}
-Authorization: Bearer <JWT>
-```
-
-Respuesta correcta:
-
-```http
-204 No Content
-```
-
----
-
 # OpenAPI
 
 La API utiliza el sistema OpenAPI integrado en ASP.NET Core.
 
-El documento está disponible en desarrollo mediante:
+Durante el desarrollo puede consultarse el documento en:
 
 ```text
 http://localhost:5080/openapi/v1.json
 ```
 
-Este documento describe automáticamente los endpoints y esquemas detectados en la API.
+El documento permite inspeccionar:
+
+- endpoints;
+- parámetros;
+- cuerpos de petición;
+- responses;
+- esquemas.
 
 Actualmente incluye operaciones relacionadas con:
 
@@ -889,17 +1645,77 @@ Auth
 Health
 Teams
 Team Members
+Projects
+Project Members
+Issues
+Issue Comments
+Issue History
 ```
+
+---
+
+# Manejo de errores
+
+DevOpsBoard utiliza un handler global de excepciones.
+
+Flujo:
+
+```text
+Exception
+    │
+    ▼
+GlobalExceptionHandler
+    │
+    ▼
+ProblemDetails
+```
+
+Las excepciones específicas de la aplicación se traducen a respuestas HTTP.
+
+Actualmente:
+
+```text
+ValidationException
+    → 400 Bad Request
+
+NotFoundException
+    → 404 Not Found
+
+ConflictException
+    → 409 Conflict
+
+UnauthorizedAccessException
+    → 401 Unauthorized
+
+ForbiddenException
+    → 403 Forbidden
+
+Unhandled Exception
+    → 500 Internal Server Error
+```
+
+Ejemplo de error:
+
+```json
+{
+  "title": "Acceso denegado.",
+  "status": 403,
+  "detail": "No tienes permisos para crear comentarios.",
+  "instance": "/api/projects/..."
+}
+```
+
+El uso de `ProblemDetails` evita respuestas de error inconsistentes entre controllers.
 
 ---
 
 # Base de datos
 
-La aplicación utiliza PostgreSQL.
+DevOpsBoard utiliza PostgreSQL como sistema de persistencia.
 
 Durante el desarrollo se ejecuta mediante Docker Compose.
 
-La base de datos contiene actualmente tablas de:
+La base de datos contiene actualmente tablas relacionadas con:
 
 ## ASP.NET Identity
 
@@ -913,13 +1729,36 @@ AspNetUserTokens
 AspNetRoleClaims
 ```
 
-## DevOpsBoard
+## Teams
 
 ```text
 teams
-projects
 team_members
+```
+
+## Projects
+
+```text
+projects
 project_members
+```
+
+## Issues
+
+```text
+issues
+```
+
+## Comments
+
+```text
+issue_comments
+```
+
+## History
+
+```text
+issue_history
 ```
 
 ## Entity Framework Core
@@ -930,9 +1769,9 @@ __EFMigrationsHistory
 
 ---
 
-# Relaciones principales de la base de datos
+# Relaciones de base de datos
 
-Simplificación del modelo:
+Simplificación:
 
 ```text
 AspNetUsers
@@ -940,35 +1779,69 @@ AspNetUsers
     ├───────────────┐
     │               │
     ▼               ▼
-teams          projects
+  teams          projects
     │               │
     ▼               ▼
 team_members   project_members
-    │               │
-    └───────┬───────┘
-            │
-        AspNetUsers
+                    │
+                    ▼
+                  issues
+                 ┌──┴───────┐
+                 │          │
+                 ▼          ▼
+          issue_comments  issue_history
 ```
 
-`TeamMember` utiliza:
+Relaciones importantes:
 
 ```text
-PK(TeamId, UserId)
+TeamMember
+    PK(TeamId, UserId)
+
+ProjectMember
+    PK(ProjectId, UserId)
 ```
 
-`ProjectMember` utiliza:
+Issues:
 
 ```text
-PK(ProjectId, UserId)
+Issue.ProjectId
+    → Project
+
+Issue.ReporterId
+    → AspNetUsers
+
+Issue.AssigneeId
+    → AspNetUsers
 ```
 
-De esta forma se evita la duplicación de membresías.
+Comments:
+
+```text
+IssueComment.IssueId
+    → Issue
+
+IssueComment.AuthorId
+    → AspNetUsers
+```
+
+History:
+
+```text
+IssueHistory.IssueId
+    → Issue
+
+IssueHistory.ActorId
+    → AspNetUsers
+```
+
+La relación de comentario utiliza `ON DELETE RESTRICT` para el autor, mientras que los comentarios se eliminan automáticamente al eliminar el recurso padre correspondiente cuando la relación lo permite.
 
 ---
 
 # Migraciones
 
-Entity Framework Core se utiliza para gestionar la evolución del esquema de la base de datos.
+Entity Framework Core gestiona la evolución del esquema.
 
 Las migraciones actuales incluyen:
 
@@ -980,20 +1853,15 @@ AddMembershipRoles
 RemoveMembershipRoleDefaults
 FixMembershipRoleDefaults
 AddTeamCreator
+AddIssues
+AddIssueHistory
+AddIssueComments
 ```
 
 Para listar las migraciones:
 
 ```powershell
 dotnet ef migrations list `
-  --project DevOpsBoard.Infrastructure `
-  --startup-project DevOpsBoard.Api
-```
-
-Para aplicar las migraciones:
-
-```powershell
-dotnet ef database update `
   --project DevOpsBoard.Infrastructure `
   --startup-project DevOpsBoard.Api
 ```
@@ -1005,6 +1873,14 @@ dotnet ef migrations add NombreDeLaMigracion `
   --project DevOpsBoard.Infrastructure `
   --startup-project DevOpsBoard.Api `
   --output-dir Persistence\Migrations
+```
+
+Para aplicar las migraciones:
+
+```powershell
+dotnet ef database update `
+  --project DevOpsBoard.Infrastructure `
+  --startup-project DevOpsBoard.Api
 ```
 
 ---
@@ -1026,25 +1902,25 @@ cd infra
 docker compose up -d
 ```
 
-Para comprobar los contenedores:
+Comprobar:
 
 ```powershell
 docker ps
 ```
 
-Actualmente el servicio principal es:
+El servicio principal es:
 
 ```text
 devopsboard-postgres
 ```
 
-PostgreSQL está expuesto localmente mediante:
+PostgreSQL se expone localmente mediante:
 
 ```text
 localhost:5432
 ```
 
-Para acceder directamente a PostgreSQL:
+Para acceder directamente:
 
 ```powershell
 docker exec -it devopsboard-postgres psql `
@@ -1056,9 +1932,9 @@ docker exec -it devopsboard-postgres psql `
 
 # Configuración del entorno
 
-Las credenciales locales no se almacenan en el repositorio.
+Las credenciales locales no deben almacenarse en Git.
 
-El proyecto utiliza dos mecanismos distintos:
+DevOpsBoard utiliza:
 
 ```text
 Docker / PostgreSQL
@@ -1076,23 +1952,28 @@ El archivo:
 infra/.env
 ```
 
-no debe subirse a Git.
+no debe subirse al repositorio.
 
-Se proporciona:
+Existe una plantilla:
 
 ```text
 infra/.env.example
 ```
 
-como plantilla.
-
 ---
 
 # User Secrets
 
-Las credenciales y claves utilizadas por la API durante el desarrollo se almacenan mediante .NET User Secrets.
+Las credenciales y claves de desarrollo se almacenan mediante .NET User Secrets.
 
-Ejemplo:
+Inicialización:
+
+```powershell
+dotnet user-secrets init `
+  --project DevOpsBoard.Api
+```
+
+Configuración de la conexión:
 
 ```powershell
 dotnet user-secrets set `
@@ -1101,7 +1982,7 @@ dotnet user-secrets set `
   --project DevOpsBoard.Api
 ```
 
-Configuración JWT:
+Configuración de JWT:
 
 ```powershell
 dotnet user-secrets set `
@@ -1124,7 +2005,7 @@ dotnet user-secrets set `
   --project DevOpsBoard.Api
 ```
 
-Email del administrador de desarrollo:
+Configuración opcional del administrador de desarrollo:
 
 ```powershell
 dotnet user-secrets set `
@@ -1133,13 +2014,14 @@ dotnet user-secrets set `
   --project DevOpsBoard.Api
 ```
 
-Para comprobar los secretos configurados:
+Para consultar los secretos registrados:
 
 ```powershell
-dotnet user-secrets list --project DevOpsBoard.Api
+dotnet user-secrets list `
+  --project DevOpsBoard.Api
 ```
 
-> Nunca se deben añadir claves JWT, contraseñas de bases de datos u otros secretos reales al repositorio.
+> Nunca deben almacenarse claves JWT, contraseñas, connection strings reales u otros secretos en Git.
 
 ---
 
@@ -1147,7 +2029,7 @@ dotnet user-secrets list --project DevOpsBoard.Api
 
 ## Requisitos
 
-Necesitas tener instalado:
+Se necesita:
 
 - .NET 10 SDK
 - Docker Desktop
@@ -1187,7 +2069,7 @@ Comprobar:
 docker ps
 ```
 
-Debe aparecer el contenedor:
+Debe aparecer:
 
 ```text
 devopsboard-postgres
@@ -1197,7 +2079,7 @@ devopsboard-postgres
 
 ## 3. Configurar User Secrets
 
-Desde `apps`:
+Ir a:
 
 ```powershell
 cd ..\apps
@@ -1206,7 +2088,8 @@ cd ..\apps
 Inicializar User Secrets:
 
 ```powershell
-dotnet user-secrets init --project DevOpsBoard.Api
+dotnet user-secrets init `
+  --project DevOpsBoard.Api
 ```
 
 Configurar la conexión:
@@ -1275,7 +2158,7 @@ dotnet ef database update `
 dotnet run --project DevOpsBoard.Api
 ```
 
-Por defecto, durante el desarrollo:
+Durante el desarrollo:
 
 ```text
 http://localhost:5080
@@ -1283,7 +2166,7 @@ http://localhost:5080
 
 ---
 
-# Tests
+# Testing
 
 Los tests se encuentran en:
 
@@ -1299,66 +2182,69 @@ Ejecutar todos los tests:
 dotnet test DevOpsBoard.slnx
 ```
 
-Actualmente el proyecto contiene tests unitarios para los servicios relacionados con equipos y miembros de equipos.
-
-Las pruebas cubren, entre otros casos:
+El proyecto cuenta actualmente con una suite de:
 
 ```text
-TeamService
-├── creación de equipos
-├── validación del nombre
-└── equipos duplicados
-
-TeamMemberService
-├── añadir miembros
-├── duplicados
-├── autorización
-├── modificación de roles
-└── eliminación de miembros
+85 tests
 ```
 
-Una de las decisiones del proyecto es que los tests de lógica de aplicación no dependan necesariamente de PostgreSQL.
+La batería cubre lógica de:
 
-Para ello se utilizan implementaciones fake de las abstracciones correspondientes.
+```text
+Teams
+Team Members
 
-Esto permite probar la lógica de negocio de forma rápida y aislada.
+Projects
+Project Members
+
+Issues
+Issue Authorization
+
+Comments
+Comment Authorization
+
+Issue History
+Audit Events
+```
+
+---
+
+# Test Strategy
+
+La estrategia de testing busca aislar la lógica de negocio de PostgreSQL siempre que sea posible.
+
+Para ello se utilizan implementaciones fake de las abstracciones de Application.
+
+Ejemplo conceptual:
+
+```text
+IssueService
+     │
+     ├── IIssueRepository
+     ├── IProjectRepository
+     ├── IUserRepository
+     ├── IIssueAuthorizationService
+     └── IIssueHistoryRepository
+             │
+             ▼
+      Fake implementations
+```
+
+Esto permite comprobar rápidamente:
+
+- validaciones;
+- autorización;
+- creación;
+- modificación;
+- eliminación;
+- eventos de historial;
+- reglas de comentarios.
 
 ---
 
 # Flujo de una petición
 
-Un ejemplo de una petición para crear un equipo:
-
-```text
-HTTP Request
-     │
-     ▼
-TeamsController
-     │
-     ▼
-ITeamService
-     │
-     ▼
-TeamService
-     │
-     ├── Validación
-     ├── Comprobación de duplicados
-     └── Creación de la entidad
-     │
-     ▼
-ITeamRepository
-     │
-     ▼
-TeamRepository
-     │
-     ▼
-Entity Framework Core
-     │
-     ▼
-PostgreSQL
-```
-
-En operaciones autenticadas:
+Ejemplo simplificado de una petición autenticada:
 
 ```text
 HTTP Request
@@ -1367,16 +2253,24 @@ HTTP Request
 JWT Bearer Authentication
      │
      ▼
-Authorization
+ClaimsPrincipal
      │
      ▼
 Controller
      │
      ▼
-Application
+Application Service
+     │
+     ├── Validación
+     ├── Autorización
+     ├── Caso de uso
+     └── Auditoría
      │
      ▼
-Infrastructure
+Repository
+     │
+     ▼
+Entity Framework Core
      │
      ▼
 PostgreSQL
@@ -1384,62 +2278,122 @@ PostgreSQL
 
 ---
 
-# Flujo de autenticación
+# Flujo de creación de una Issue
 
 ```text
-                 ┌────────────────────┐
-                 │      Cliente       │
-                 └─────────┬──────────┘
-                           │
-                           │ POST /login
-                           ▼
-                 ┌────────────────────┐
-                 │   AuthController   │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │    AuthService     │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │ ASP.NET Identity   │
-                 └─────────┬──────────┘
-                           │
-                      credenciales OK
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │ JwtTokenGenerator  │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                       JWT Token
+POST /api/projects/{projectId}/issues
+                │
+                ▼
+        IssuesController
+                │
+                ▼
+          IssueService
+                │
+       ┌────────┴────────┐
+       │                 │
+       ▼                 ▼
+  Project exists?   CanCreate?
+       │                 │
+       └────────┬────────┘
+                │
+                ▼
+          Create Issue
+                │
+                ├──────────────┐
+                │              │
+                ▼              ▼
+           Issue entity   IssueHistory
+                          Created event
+                │              │
+                └──────┬───────┘
+                       ▼
+                  SaveChanges
+                       │
+                       ▼
+                   PostgreSQL
 ```
 
-Posteriormente:
+---
+
+# Flujo de actualización de una Issue
+
+Una petición `PATCH` puede modificar varias propiedades al mismo tiempo.
+
+Ejemplo:
 
 ```text
-Client
-  │
-  │ Authorization: Bearer <JWT>
-  ▼
-JWT Authentication
-  │
-  ▼
-ClaimsPrincipal
-  │
-  ├── UserId
-  ├── Email
-  └── Role
-  │
-  ▼
+Status
+Priority
+Assignee
+```
+
+El servicio genera eventos individuales:
+
+```text
+StatusChanged
+PriorityChanged
+Assigned
+```
+
+pero los agrupa con un único:
+
+```text
+CorrelationId
+```
+
+Flujo:
+
+```text
+PATCH
+ │
+ ▼
+IssueService
+ │
+ ├── Authorization
+ │
+ ├── Change Status
+ │       └── History
+ │
+ ├── Change Priority
+ │       └── History
+ │
+ └── Assign User
+         └── History
+ │
+ ▼
+SaveChanges
+```
+
+---
+
+# Flujo de eliminación de una Issue
+
+La eliminación utiliza soft delete:
+
+```text
+DELETE
+ │
+ ▼
 Authorization
-  │
-  ▼
-Controller
+ │
+ ▼
+Issue.Delete()
+ │
+ ├── IsDeleted = true
+ └── DeletedAt = UTC timestamp
+ │
+ ▼
+IssueHistory
+ │
+ └── Deleted
+ │
+ ▼
+SaveChanges
 ```
+
+La Issue permanece en la base de datos para preservar integridad y trazabilidad.
+
+Las consultas normales la ocultan mediante el filtro global de EF Core.
 
 ---
 
@@ -1447,46 +2401,42 @@ Controller
 
 ## Separación entre Domain e Infrastructure
 
-Las entidades del dominio no dependen directamente de:
+Las entidades de dominio no dependen directamente de:
 
 ```text
-Entity Framework Core
+EF Core
 PostgreSQL
-ASP.NET Identity
+Identity
 JWT
 ```
 
-Esto permite mantener las reglas principales del dominio independientes de la tecnología de persistencia.
+La infraestructura implementa los detalles técnicos.
 
 ---
 
 ## DTOs
 
-Los DTOs permiten separar:
+La API no expone directamente las entidades de dominio.
+
+Se utilizan DTOs para definir contratos específicos.
+
+Ejemplo:
 
 ```text
-Modelo interno
+Issue
+    ↓
+IssueDto
 ```
 
-de:
+y:
 
 ```text
-Contrato de la API
+IssueComment
+    ↓
+IssueCommentDto
 ```
 
-Por ejemplo:
-
-```text
-Team
-```
-
-no se expone directamente como entidad de persistencia en las respuestas HTTP.
-
-En su lugar se utiliza:
-
-```text
-TeamDto
-```
+Esto permite modificar internamente el modelo sin romper necesariamente el contrato HTTP.
 
 ---
 
@@ -1495,74 +2445,86 @@ TeamDto
 Application define abstracciones como:
 
 ```text
-ITeamRepository
-ITeamMemberRepository
-IUserRepository
+IIssueRepository
+IProjectRepository
+IIssueAuthorizationService
+IIssueHistoryRepository
 ```
 
-Infrastructure proporciona las implementaciones concretas.
-
-Esto permite que la capa de aplicación no tenga que conocer detalles de PostgreSQL o EF Core.
-
----
-
-## Repositorios
-
-La lógica de acceso a datos se mantiene en Infrastructure.
-
-Ejemplo:
+Infrastructure proporciona las implementaciones:
 
 ```text
-ITeamRepository
-        │
-        ▼
-TeamRepository
-        │
-        ▼
-DevOpsBoardDbContext
-        │
-        ▼
-PostgreSQL
+IssueRepository
+ProjectRepository
+IssueAuthorizationService
+IssueHistoryRepository
 ```
 
----
-
-## Excepciones de aplicación
-
-En lugar de utilizar únicamente excepciones genéricas, el proyecto define excepciones propias:
-
-```text
-ValidationException
-NotFoundException
-ConflictException
-ForbiddenException
-```
-
-Esto permite mapearlas correctamente a HTTP.
+Esto desacopla los casos de uso de PostgreSQL y Entity Framework Core.
 
 ---
 
 ## Autorización contextual
 
-La autorización no se limita a:
+Las decisiones de autorización no dependen únicamente de roles globales.
+
+Ejemplo:
 
 ```text
-¿Eres ADMIN?
+Usuario
+   │
+   ▼
+ProjectMember
+   │
+   ▼
+ProjectRole = Manager
+   │
+   ▼
+Proyecto específico
 ```
 
-También puede preguntar:
+Esto permite que un mismo usuario tenga diferentes permisos en diferentes proyectos.
+
+---
+
+## Auditoría
+
+Los cambios importantes se registran en `IssueHistory`.
+
+Esto permite responder preguntas como:
 
 ```text
-¿Eres Lead de este equipo concreto?
+¿Quién creó esta Issue?
+
+¿Quién cambió su estado?
+
+¿Cuándo ocurrió?
+
+¿Qué valor tenía antes?
+
+¿Qué valor tiene ahora?
+
+¿Qué acciones pertenecieron a la misma operación?
 ```
 
-Esto permite construir políticas de acceso más realistas.
+---
+
+## Soft Delete
+
+Las Issues no se eliminan físicamente mediante el endpoint normal.
+
+Esto proporciona:
+
+- trazabilidad;
+- integridad referencial;
+- posibilidad de auditoría;
+- protección frente a pérdida accidental de datos.
 
 ---
 
 # Roadmap
 
-El proyecto está siendo construido progresivamente.
+El proyecto se desarrolla de forma incremental.
 
 ## ✅ Completado
 
@@ -1584,49 +2546,80 @@ El proyecto está siendo construido progresivamente.
 [✓] Team Members
 [✓] Roles de equipo
 [✓] Autorización basada en equipo
+[✓] Projects
+[✓] Project Members
+[✓] Project Roles
+[✓] Autorización basada en proyecto
+[✓] Issues
+[✓] Issue Status
+[✓] Issue Priority
+[✓] Issue Assignment
+[✓] Issue Authorization
+[✓] Soft Delete
+[✓] Issue History
+[✓] CorrelationId
+[✓] History API
+[✓] Issue Comments
+[✓] Comment Authorization
+[✓] Comment Audit
 [✓] Global Exception Handler
 [✓] ProblemDetails
 [✓] OpenAPI
 [✓] Tests unitarios
 ```
 
-## 🚧 En desarrollo / próximos bloques
+---
+
+## 🚧 Próximos bloques
+
+El siguiente bloque principal es mejorar las consultas de Issues.
 
 ```text
-[ ] Projects API
-[ ] Project Members
-[ ] Project roles
-[ ] Project-level authorization
-[ ] Issues / Tasks
-[ ] Estados de tareas
-[ ] Prioridades
-[ ] Asignación de usuarios
-[ ] Labels
-[ ] Comentarios
-[ ] Historial de cambios
 [ ] Paginación
-[ ] Filtros
-[ ] Ordenación
+[ ] Filtros por estado
+[ ] Filtros por prioridad
+[ ] Filtro por asignado
+[ ] Búsqueda por texto
+[ ] Ordenación configurable
+[ ] Respuestas paginadas
 ```
 
-## 🚀 Fase DevOps
+Después:
+
+```text
+[ ] Labels
+[ ] Issue Labels
+[ ] Más metadatos para Issues
+[ ] Historial más avanzado
+[ ] Mejoras de consulta
+```
+
+---
+
+# Fase DevOps
+
+Una vez estabilizada la API:
 
 ```text
 [ ] Dockerización completa de la aplicación
-[ ] Health checks
+[ ] Health checks de infraestructura
 [ ] GitHub Actions
 [ ] CI
-[ ] Ejecución automática de tests
 [ ] Build automatizado
+[ ] Ejecución automática de tests
 [ ] Docker image
+[ ] Registro de imágenes
 [ ] CD
 [ ] Gestión de variables de entorno
 [ ] Observabilidad
 [ ] Logs estructurados
+[ ] Métricas
 [ ] Despliegue
 ```
 
-## 🎨 Fase frontend
+---
+
+# Fase frontend
 
 Está prevista una interfaz web para consumir la API.
 
@@ -1638,7 +2631,55 @@ TypeScript
 Vite
 ```
 
-La interfaz se conectará con la API mediante JWT y permitirá gestionar usuarios, equipos, proyectos y tareas.
+La interfaz tendrá como objetivo permitir:
+
+```text
+Authentication
+Teams
+Projects
+Issues
+Comments
+History
+```
+
+La autenticación se realizará utilizando JWT.
+
+---
+
+# Seguridad
+
+La aplicación utiliza diferentes mecanismos para reducir riesgos de seguridad durante el desarrollo.
+
+## Secretos
+
+Los secretos locales se almacenan mediante:
+
+```text
+.NET User Secrets
+infra/.env
+```
+
+No deben almacenarse en Git.
+
+---
+
+## JWT
+
+La clave de firma de JWT debe mantenerse fuera del repositorio.
+
+En desarrollo se utiliza User Secrets.
+
+En producción deberá utilizarse un sistema de gestión de secretos adecuado.
+
+---
+
+## Autorización
+
+La autorización se realiza en la capa de aplicación/infrastructure mediante servicios específicos.
+
+No se confía únicamente en el frontend para restringir acciones.
+
+Cada operación sensible debe validar el usuario que ejecuta la acción.
 
 ---
 
@@ -1656,6 +2697,11 @@ DevOpsBoard/
 │   │   ├── Controllers/
 │   │   │   ├── AuthController.cs
 │   │   │   ├── HealthController.cs
+│   │   │   ├── IssueCommentsController.cs
+│   │   │   ├── IssueHistoryController.cs
+│   │   │   ├── IssuesController.cs
+│   │   │   ├── ProjectMembersController.cs
+│   │   │   ├── ProjectsController.cs
 │   │   │   ├── TeamMembersController.cs
 │   │   │   └── TeamsController.cs
 │   │   │
@@ -1679,6 +2725,14 @@ DevOpsBoard/
 │   │
 │   ├── DevOpsBoard.Domain/
 │   │   ├── Entities/
+│   │   │   ├── Issue.cs
+│   │   │   ├── IssueComment.cs
+│   │   │   ├── IssueHistory.cs
+│   │   │   ├── Project.cs
+│   │   │   ├── ProjectMember.cs
+│   │   │   ├── Team.cs
+│   │   │   └── TeamMember.cs
+│   │   │
 │   │   └── Enums/
 │   │
 │   ├── DevOpsBoard.Infrastructure/
@@ -1690,6 +2744,14 @@ DevOpsBoard/
 │   │       └── Repositories/
 │   │
 │   ├── DevOpsBoard.Tests/
+│   │   ├── IssueCommentServiceTests.cs
+│   │   ├── IssueCommentTests.cs
+│   │   ├── IssueHistoryServiceTests.cs
+│   │   ├── IssueHistoryTests.cs
+│   │   ├── IssueServiceTests.cs
+│   │   ├── IssueTests.cs
+│   │   ├── ProjectMemberServiceTests.cs
+│   │   ├── ProjectServiceTests.cs
 │   │   ├── TeamMemberServiceTests.cs
 │   │   └── TeamServiceTests.cs
 │   │
@@ -1706,93 +2768,86 @@ DevOpsBoard/
 
 # Calidad y estado del proyecto
 
-El objetivo del desarrollo es mantener el repositorio en un estado que pueda compilar y probarse en cualquier momento.
+El objetivo del desarrollo es mantener el repositorio en un estado compilable y testeable.
 
-Comprobación de build:
+Build:
 
 ```powershell
 dotnet build DevOpsBoard.slnx
 ```
 
-Comprobación de tests:
+Tests:
 
 ```powershell
 dotnet test DevOpsBoard.slnx
 ```
 
-El proyecto actualmente cuenta con una suite de tests unitarios para la lógica de equipos y miembros de equipos.
-
----
-
-# Seguridad
-
-Este proyecto utiliza varias medidas para evitar exponer credenciales accidentalmente.
-
-## Secretos
-
-Los secretos locales se almacenan utilizando:
+Estado actual de la suite:
 
 ```text
-.NET User Secrets
+85 tests
+0 errores
 ```
 
-y:
+La intención es utilizar cada cambio significativo como un checkpoint:
 
 ```text
-infra/.env
+Modificar
+   ↓
+Compilar
+   ↓
+Ejecutar tests
+   ↓
+Probar API real si aplica
+   ↓
+Commit
+   ↓
+Push
 ```
 
-No deben almacenarse en Git.
+Esto permite reducir el riesgo de acumular cambios difíciles de aislar.
 
 ---
 
-## JWT
+# Estado actual
 
-La clave utilizada para firmar JWT debe mantenerse fuera del repositorio.
-
-En desarrollo se utiliza User Secrets.
-
-En producción, la intención es utilizar un sistema de gestión de secretos adecuado para el entorno de despliegue.
-
----
-
-# Estado del proyecto
-
-DevOpsBoard se encuentra actualmente en una fase temprana de desarrollo.
-
-La base del backend ya está implementada:
+DevOpsBoard ha pasado de una API básica centrada en autenticación y equipos a una plataforma de backend con:
 
 ```text
 Identity
     ↓
-Authentication
+JWT Authentication
     ↓
-Authorization
+Global Roles
+    ↓
+Contextual Authorization
     ↓
 Teams
     ↓
-Team Members
-    ↓
-Resource-based authorization
-    ↓
-Testing
-```
-
-La siguiente gran fase consiste en desarrollar:
-
-```text
 Projects
     ↓
 Project Members
     ↓
 Issues
-    ↓
-Workflow
-    ↓
-CI/CD
+    ├── Assignment
+    ├── Workflow
+    ├── Soft Delete
+    │
+    ├── Comments
+    │
+    └── Audit History
 ```
 
-El proyecto se desarrolla incrementalmente, manteniendo el repositorio compilable y los tests funcionando a medida que se introducen nuevas funcionalidades.
+La siguiente evolución importante consiste en mejorar la capacidad de consulta de Issues mediante:
+
+```text
+Pagination
+Filtering
+Search
+Sorting
+```
+
+antes de continuar ampliando el dominio funcional.
 
 ---
 
@@ -1802,11 +2857,11 @@ El proyecto se desarrolla incrementalmente, manteniendo el repositorio compilabl
 
 Desarrollador Full Stack y desarrollador de videojuegos.
 
-### Portfolio
+## Portfolio
 
 https://jaime-molina-granados.vercel.app
 
-### GitHub
+## GitHub
 
 https://github.com/JaimeMGR
 
