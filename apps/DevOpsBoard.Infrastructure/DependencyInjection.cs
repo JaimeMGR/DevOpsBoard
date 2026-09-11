@@ -101,6 +101,11 @@ public static class DependencyInjection
             ProjectMemberService
         >();
 
+        services.AddScoped<
+            IIssueAuthorizationService,
+            IssueAuthorizationService
+        >();
+
         services.Configure<JwtOptions>(
             configuration.GetSection(
                 JwtOptions.SectionName
@@ -109,6 +114,9 @@ public static class DependencyInjection
 
         services.AddScoped<JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddScoped<IIssueRepository, IssueRepository>();
+        services.AddScoped<IIssueService, IssueService>();
 
         return services;
     }

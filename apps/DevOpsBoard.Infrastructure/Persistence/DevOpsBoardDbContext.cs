@@ -22,6 +22,8 @@ public class DevOpsBoardDbContext
 
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
+    public DbSet<Issue> Issues => Set<Issue>();
+    
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
