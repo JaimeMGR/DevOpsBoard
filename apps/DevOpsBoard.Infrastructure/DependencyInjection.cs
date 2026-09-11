@@ -137,8 +137,6 @@ public static class DependencyInjection
             IssueCommentService
         >();
 
-        services.AddScoped<IIssueRepository, IssueRepository>();
-
         services.AddScoped<JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
 

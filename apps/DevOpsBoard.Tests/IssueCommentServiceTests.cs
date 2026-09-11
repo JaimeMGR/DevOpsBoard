@@ -767,6 +767,42 @@ public class IssueCommentServiceTests
             );
         }
 
+        public Task<PagedResult<Issue>>
+    GetPagedByProjectIdAsync(
+        Guid projectId,
+        IssueQueryParameters query,
+        CancellationToken cancellationToken = default)
+        {
+            var filtered = Issues
+                .Where(
+                    issue => issue.ProjectId == projectId
+                )
+                .OrderByDescending(
+                    issue => issue.CreatedAt
+                )
+                .ToList();
+
+            var totalCount = filtered.Count;
+
+            var items = filtered
+                .Skip(
+                    (query.Page - 1) * query.PageSize
+                )
+                .Take(
+                    query.PageSize
+                )
+                .ToList();
+
+            return Task.FromResult(
+                new PagedResult<Issue>(
+                    items,
+                    query.Page,
+                    query.PageSize,
+                    totalCount
+                )
+            );
+        }
+
         public Task AddAsync(
             Issue issue,
             CancellationToken cancellationToken = default)

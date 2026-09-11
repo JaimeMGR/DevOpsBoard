@@ -24,6 +24,13 @@ public interface IIssueService
         CancellationToken cancellationToken = default
     );
 
+    Task<PagedResult<IssueDto>> GetPagedByProjectIdAsync(
+        Guid projectId,
+        IssueQueryParameters query,
+        string actingUserId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<IssueDto> UpdateAsync(
         Guid projectId,
         Guid issueId,

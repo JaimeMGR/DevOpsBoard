@@ -1,3 +1,4 @@
+using DevOpsBoard.Application.DTOs;
 using DevOpsBoard.Domain.Entities;
 
 namespace DevOpsBoard.Application.Abstractions;
@@ -16,6 +17,12 @@ public interface IIssueRepository
 
     Task<IReadOnlyList<Issue>> GetByProjectIdAsync(
         Guid projectId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<PagedResult<Issue>> GetPagedByProjectIdAsync(
+        Guid projectId,
+        IssueQueryParameters query,
         CancellationToken cancellationToken = default
     );
 

@@ -554,6 +554,301 @@ public class IssueServiceTests
     }
 
     [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldReturnFirstPage()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        await issueRepository.AddAsync(
+            new Issue(
+                ProjectId,
+                "Issue 1",
+                ReporterId
+            )
+        );
+
+        await issueRepository.AddAsync(
+            new Issue(
+                ProjectId,
+                "Issue 2",
+                ReporterId
+            )
+        );
+
+        await issueRepository.AddAsync(
+            new Issue(
+                ProjectId,
+                "Issue 3",
+                ReporterId
+            )
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService
+        );
+
+        var result =
+            await service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    Page: 1,
+                    PageSize: 2
+                ),
+                ReporterId
+            );
+
+        Assert.Equal(
+            2,
+            result.Items.Count
+        );
+
+        Assert.Equal(
+            3,
+            result.TotalCount
+        );
+
+        Assert.Equal(
+            1,
+            result.Page
+        );
+
+        Assert.Equal(
+            2,
+            result.PageSize
+        );
+
+        Assert.Equal(
+            2,
+            result.TotalPages
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldReturnSecondPage()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        await issueRepository.AddAsync(
+            new Issue(
+                ProjectId,
+                "Issue 1",
+                ReporterId
+            )
+        );
+
+        await issueRepository.AddAsync(
+            new Issue(
+                ProjectId,
+                "Issue 2",
+                ReporterId
+            )
+        );
+
+        await issueRepository.AddAsync(
+            new Issue(
+                ProjectId,
+                "Issue 3",
+                ReporterId
+            )
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService
+        );
+
+        var result =
+            await service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    Page: 2,
+                    PageSize: 2
+                ),
+                ReporterId
+            );
+
+        Assert.Single(
+            result.Items
+        );
+
+        Assert.Equal(
+            3,
+            result.TotalCount
+        );
+
+        Assert.Equal(
+            2,
+            result.Page
+        );
+
+        Assert.Equal(
+            2,
+            result.PageSize
+        );
+
+        Assert.Equal(
+            2,
+            result.TotalPages
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldRejectInvalidPage()
+    {
+        var service = CreateService(
+            new FakeIssueRepository(),
+            new FakeProjectRepository(),
+            new FakeUserRepository(ReporterId),
+            new FakeIssueAuthorizationService(true)
+        );
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    Page: 0,
+                    PageSize: 20
+                ),
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldRejectInvalidPageSize()
+    {
+        var service = CreateService(
+            new FakeIssueRepository(),
+            new FakeProjectRepository(),
+            new FakeUserRepository(ReporterId),
+            new FakeIssueAuthorizationService(true)
+        );
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    Page: 1,
+                    PageSize: 101
+                ),
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldRejectInvalidStatus()
+    {
+        var service = CreateService(
+            new FakeIssueRepository(),
+            new FakeProjectRepository(),
+            new FakeUserRepository(ReporterId),
+            new FakeIssueAuthorizationService(true)
+        );
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    Status: "Cancelled"
+                ),
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldRejectInvalidPriority()
+    {
+        var service = CreateService(
+            new FakeIssueRepository(),
+            new FakeProjectRepository(),
+            new FakeUserRepository(ReporterId),
+            new FakeIssueAuthorizationService(true)
+        );
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    Priority: "Urgent"
+                ),
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldRejectInvalidSortBy()
+    {
+        var service = CreateService(
+            new FakeIssueRepository(),
+            new FakeProjectRepository(),
+            new FakeUserRepository(ReporterId),
+            new FakeIssueAuthorizationService(true)
+        );
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    SortBy: "AssigneeId"
+                ),
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
+    public async Task GetPagedByProjectIdAsync_ShouldRejectInvalidSortDirection()
+    {
+        var service = CreateService(
+            new FakeIssueRepository(),
+            new FakeProjectRepository(),
+            new FakeUserRepository(ReporterId),
+            new FakeIssueAuthorizationService(true)
+        );
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.GetPagedByProjectIdAsync(
+                ProjectId,
+                new IssueQueryParameters(
+                    SortDirection: "sideways"
+                ),
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
     public async Task UpdateAsync_ShouldUpdateIssue_WhenAuthorized()
     {
         var issueRepository =
@@ -1406,7 +1701,6 @@ public class IssueServiceTests
             result[0].Id
         );
     }
-
     private static IssueService CreateService(
     IIssueRepository issueRepository,
     IProjectRepository projectRepository,
@@ -1470,9 +1764,45 @@ public class IssueServiceTests
             >(result);
         }
 
+        public Task<PagedResult<Issue>>
+GetPagedByProjectIdAsync(
+    Guid projectId,
+    IssueQueryParameters query,
+    CancellationToken cancellationToken = default)
+        {
+            var filtered = Issues
+                .Where(
+                    issue => issue.ProjectId == projectId
+                )
+                .OrderByDescending(
+                    issue => issue.CreatedAt
+                )
+                .ToList();
+
+            var totalCount = filtered.Count;
+
+            var items = filtered
+                .Skip(
+                    (query.Page - 1) * query.PageSize
+                )
+                .Take(
+                    query.PageSize
+                )
+                .ToList();
+
+            return Task.FromResult(
+                new PagedResult<Issue>(
+                    items,
+                    query.Page,
+                    query.PageSize,
+                    totalCount
+                )
+            );
+        }
+
         public Task AddAsync(
-            Issue issue,
-            CancellationToken cancellationToken = default)
+                    Issue issue,
+                    CancellationToken cancellationToken = default)
         {
             Issues.Add(issue);
 

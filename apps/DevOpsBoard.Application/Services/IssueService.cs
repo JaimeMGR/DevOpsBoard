@@ -17,11 +17,11 @@ public class IssueService : IIssueService
         _issueHistoryRepository;
 
     public IssueService(
-        IIssueRepository issueRepository,
-        IProjectRepository projectRepository,
-        IUserRepository userRepository,
-        IIssueAuthorizationService issueAuthorizationService,
-        IIssueHistoryRepository issueHistoryRepository)
+    IIssueRepository issueRepository,
+    IProjectRepository projectRepository,
+    IUserRepository userRepository,
+    IIssueAuthorizationService issueAuthorizationService,
+    IIssueHistoryRepository issueHistoryRepository)
     {
         _issueRepository = issueRepository;
         _projectRepository = projectRepository;
@@ -32,6 +32,82 @@ public class IssueService : IIssueService
             issueHistoryRepository;
     }
 
+    private static void ValidateQuery(
+        IssueQueryParameters query)
+    {
+        if (query.Page < 1)
+        {
+            throw new ValidationException(
+                "La página debe ser mayor o igual que 1."
+            );
+        }
+
+        if (query.PageSize < 1 ||
+            query.PageSize > 100)
+        {
+            throw new ValidationException(
+                "El tamaño de página debe estar entre 1 y 100."
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                query.Status) &&
+            !Enum.TryParse<IssueStatus>(
+                query.Status,
+                true,
+                out _))
+        {
+            throw new ValidationException(
+                "El estado indicado no es válido."
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                query.Priority) &&
+            !Enum.TryParse<IssuePriority>(
+                query.Priority,
+                true,
+                out _))
+        {
+            throw new ValidationException(
+                "La prioridad indicada no es válida."
+            );
+        }
+
+        var validSortFields =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+            "CreatedAt",
+            "UpdatedAt",
+            "Title",
+            "Status",
+            "Priority"
+            };
+
+        if (!validSortFields.Contains(
+                query.SortBy))
+        {
+            throw new ValidationException(
+                "El campo de ordenación no es válido."
+            );
+        }
+
+        if (!string.Equals(
+                query.SortDirection,
+                "asc",
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            !string.Equals(
+                query.SortDirection,
+                "desc",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ValidationException(
+                "La dirección de ordenación debe ser 'asc' o 'desc'."
+            );
+        }
+    }
     public async Task<IssueDto> CreateAsync(
         Guid projectId,
         CreateIssueRequest request,
@@ -257,6 +333,73 @@ public class IssueService : IIssueService
         return issues
             .Select(MapToDto)
             .ToList();
+    }
+
+    public async Task<PagedResult<IssueDto>>
+    GetPagedByProjectIdAsync(
+        Guid projectId,
+        IssueQueryParameters query,
+        string actingUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "El proyecto es obligatorio."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(actingUserId))
+        {
+            throw new ValidationException(
+                "El usuario es obligatorio."
+            );
+        }
+
+        ValidateQuery(query);
+
+        var project =
+            await _projectRepository.GetByIdAsync(
+                projectId,
+                cancellationToken
+            );
+
+        if (project is null)
+        {
+            throw new NotFoundException(
+                "El proyecto no existe."
+            );
+        }
+
+        var canView =
+            await _issueAuthorizationService.CanViewAsync(
+                projectId,
+                actingUserId,
+                cancellationToken
+            );
+
+        if (!canView)
+        {
+            throw new ForbiddenException(
+                "No tienes permisos para consultar este proyecto."
+            );
+        }
+
+        var result =
+            await _issueRepository.GetPagedByProjectIdAsync(
+                projectId,
+                query,
+                cancellationToken
+            );
+
+        return new PagedResult<IssueDto>(
+            result.Items
+                .Select(MapToDto)
+                .ToList(),
+            result.Page,
+            result.PageSize,
+            result.TotalCount
+        );
     }
 
     public async Task<IssueDto> UpdateAsync(

@@ -21,28 +21,32 @@ public class IssuesController : ControllerBase
 
     [HttpGet]
     public async Task<
-        ActionResult<IReadOnlyList<IssueDto>>
-    > GetAll(
-        Guid projectId,
-        CancellationToken cancellationToken)
+    ActionResult<PagedResult<IssueDto>>
+> GetAll(
+    Guid projectId,
+    [FromQuery] IssueQueryParameters query,
+    CancellationToken cancellationToken)
     {
         var actingUserId = User.FindFirstValue(
             ClaimTypes.NameIdentifier
         );
 
-        if (string.IsNullOrWhiteSpace(actingUserId))
+        if (string.IsNullOrWhiteSpace(
+                actingUserId))
         {
             return Unauthorized();
         }
 
-        var issues =
-            await _issueService.GetByProjectIdAsync(
-                projectId,
-                actingUserId,
-                cancellationToken
-            );
+        var result =
+            await _issueService
+                .GetPagedByProjectIdAsync(
+                    projectId,
+                    query,
+                    actingUserId,
+                    cancellationToken
+                );
 
-        return Ok(issues);
+        return Ok(result);
     }
 
     [HttpGet("{issueId:guid}")]

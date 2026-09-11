@@ -233,6 +233,7 @@ public class IssueHistoryServiceTests
         var historyRepository =
             new FakeIssueHistoryRepository();
 
+
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
@@ -261,7 +262,6 @@ public class IssueHistoryServiceTests
             )
         );
     }
-
     private static IssueHistoryService CreateService(
         IIssueRepository issueRepository,
         IProjectRepository projectRepository,
@@ -319,7 +319,43 @@ public class IssueHistoryServiceTests
             >(result);
         }
 
-        public Task AddAsync(
+                public Task<PagedResult<Issue>>
+            GetPagedByProjectIdAsync(
+                Guid projectId,
+                IssueQueryParameters query,
+                CancellationToken cancellationToken = default)
+        {
+            var filtered = Issues
+                .Where(
+                    issue => issue.ProjectId == projectId
+                )
+                .OrderByDescending(
+                    issue => issue.CreatedAt
+                )
+                .ToList();
+
+            var totalCount = filtered.Count;
+
+            var items = filtered
+                .Skip(
+                    (query.Page - 1) * query.PageSize
+                )
+                .Take(
+                    query.PageSize
+                )
+                .ToList();
+
+            return Task.FromResult(
+                new PagedResult<Issue>(
+                    items,
+                    query.Page,
+                    query.PageSize,
+                    totalCount
+                )
+            );
+        }
+
+public Task AddAsync(
             Issue issue,
             CancellationToken cancellationToken = default)
         {
