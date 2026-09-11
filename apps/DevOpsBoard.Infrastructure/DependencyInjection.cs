@@ -71,6 +71,36 @@ public static class DependencyInjection
             TeamAuthorizationService
         >();
 
+        services.AddScoped<
+            IProjectRepository,
+            ProjectRepository
+        >();
+
+        services.AddScoped<
+            IProjectService,
+            ProjectService
+        >();
+
+        services.AddScoped<
+            IProjectAuthorizationService,
+            ProjectAuthorizationService
+        >();
+
+        services.AddScoped<
+            IProjectMemberAuthorizationService,
+            ProjectMemberAuthorizationService
+        >();
+
+        services.AddScoped<
+            IProjectMemberRepository,
+            ProjectMemberRepository
+        >();
+
+        services.AddScoped<
+            IProjectMemberService,
+            ProjectMemberService
+        >();
+
         services.Configure<JwtOptions>(
             configuration.GetSection(
                 JwtOptions.SectionName

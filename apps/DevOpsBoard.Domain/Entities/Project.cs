@@ -20,7 +20,11 @@ public class Project
         string ownerId,
         string? description = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        var normalizedName = name?.Trim();
+        var normalizedKey = key?.Trim().ToUpperInvariant();
+        var normalizedOwnerId = ownerId?.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
         {
             throw new ArgumentException(
                 "El nombre del proyecto es obligatorio.",
@@ -28,7 +32,7 @@ public class Project
             );
         }
 
-        if (string.IsNullOrWhiteSpace(key))
+        if (string.IsNullOrWhiteSpace(normalizedKey))
         {
             throw new ArgumentException(
                 "La clave del proyecto es obligatoria.",
@@ -36,7 +40,7 @@ public class Project
             );
         }
 
-        if (key.Length > 10)
+        if (normalizedKey.Length > 10)
         {
             throw new ArgumentException(
                 "La clave del proyecto no puede superar los 10 caracteres.",
@@ -44,7 +48,7 @@ public class Project
             );
         }
 
-        if (string.IsNullOrWhiteSpace(ownerId))
+        if (string.IsNullOrWhiteSpace(normalizedOwnerId))
         {
             throw new ArgumentException(
                 "El propietario del proyecto es obligatorio.",
@@ -53,11 +57,52 @@ public class Project
         }
 
         Id = Guid.NewGuid();
-        Name = name.Trim();
-        Key = key.Trim().ToUpperInvariant();
+        Name = normalizedName;
+        Key = normalizedKey;
         Description = description?.Trim();
-        OwnerId = ownerId;
+        OwnerId = normalizedOwnerId;
         CreatedAt = DateTime.UtcNow;
+    }
+
+    public void Update(
+        string name,
+        string? description)
+    {
+        var normalizedName = name?.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            throw new ArgumentException(
+                "El nombre del proyecto es obligatorio.",
+                nameof(name)
+            );
+        }
+
+        Name = normalizedName;
+        Description = description?.Trim();
+    }
+
+    public void ChangeKey(string key)
+    {
+        var normalizedKey = key?.Trim().ToUpperInvariant();
+
+        if (string.IsNullOrWhiteSpace(normalizedKey))
+        {
+            throw new ArgumentException(
+                "La clave del proyecto es obligatoria.",
+                nameof(key)
+            );
+        }
+
+        if (normalizedKey.Length > 10)
+        {
+            throw new ArgumentException(
+                "La clave del proyecto no puede superar los 10 caracteres.",
+                nameof(key)
+            );
+        }
+
+        Key = normalizedKey;
     }
 
     private Project()
