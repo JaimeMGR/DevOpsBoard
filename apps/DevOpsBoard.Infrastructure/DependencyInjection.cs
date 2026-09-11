@@ -122,6 +122,21 @@ public static class DependencyInjection
             IssueHistoryRepository
         >();
 
+        services.AddScoped<
+            IIssueCommentRepository,
+            IssueCommentRepository
+        >();
+
+        services.AddScoped<
+            ICommentAuthorizationService,
+            CommentAuthorizationService
+        >();
+
+        services.AddScoped<
+            IIssueCommentService,
+            IssueCommentService
+        >();
+
         services.AddScoped<IIssueRepository, IssueRepository>();
 
         services.AddScoped<JwtTokenGenerator>();

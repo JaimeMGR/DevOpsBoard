@@ -9,5 +9,8 @@ public enum IssueHistoryAction
     PriorityChanged,
     Assigned,
     Unassigned,
+    CommentAdded,
+    CommentEdited,
+    CommentDeleted,
     Deleted
 }

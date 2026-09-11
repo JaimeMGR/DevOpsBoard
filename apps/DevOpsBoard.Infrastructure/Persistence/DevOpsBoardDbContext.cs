@@ -27,6 +27,9 @@ public class DevOpsBoardDbContext
     public DbSet<IssueHistory> IssueHistories =>
     Set<IssueHistory>();
 
+    public DbSet<IssueComment> IssueComments =>
+    Set<IssueComment>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
