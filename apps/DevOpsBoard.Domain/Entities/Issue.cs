@@ -24,6 +24,10 @@ public class Issue
 
     public DateTime UpdatedAt { get; private set; }
 
+    public bool IsDeleted { get; private set; }
+
+    public DateTime? DeletedAt { get; private set; }
+
     public Issue(
         Guid projectId,
         string title,
@@ -140,6 +144,18 @@ public class Issue
     {
         AssigneeId = null;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Delete()
+    {
+        if (IsDeleted)
+        {
+            return;
+        }
+
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        UpdatedAt = DeletedAt.Value;
     }
 
     private Issue()

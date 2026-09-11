@@ -26,9 +26,19 @@ public class IssuesController : ControllerBase
         Guid projectId,
         CancellationToken cancellationToken)
     {
+        var actingUserId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier
+        );
+
+        if (string.IsNullOrWhiteSpace(actingUserId))
+        {
+            return Unauthorized();
+        }
+
         var issues =
             await _issueService.GetByProjectIdAsync(
                 projectId,
+                actingUserId,
                 cancellationToken
             );
 
@@ -41,10 +51,20 @@ public class IssuesController : ControllerBase
         Guid issueId,
         CancellationToken cancellationToken)
     {
+        var actingUserId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier
+        );
+
+        if (string.IsNullOrWhiteSpace(actingUserId))
+        {
+            return Unauthorized();
+        }
+
         var issue =
             await _issueService.GetByIdAsync(
                 projectId,
                 issueId,
+                actingUserId,
                 cancellationToken
             );
 
@@ -89,12 +109,13 @@ public class IssuesController : ControllerBase
             issue
         );
     }
+
     [HttpPatch("{issueId:guid}")]
     public async Task<ActionResult<IssueDto>> Update(
-    Guid projectId,
-    Guid issueId,
-    UpdateIssueRequest request,
-    CancellationToken cancellationToken)
+        Guid projectId,
+        Guid issueId,
+        UpdateIssueRequest request,
+        CancellationToken cancellationToken)
     {
         var actingUserId = User.FindFirstValue(
             ClaimTypes.NameIdentifier
@@ -119,9 +140,9 @@ public class IssuesController : ControllerBase
 
     [HttpDelete("{issueId:guid}")]
     public async Task<IActionResult> Delete(
-    Guid projectId,
-    Guid issueId,
-    CancellationToken cancellationToken)
+        Guid projectId,
+        Guid issueId,
+        CancellationToken cancellationToken)
     {
         var actingUserId = User.FindFirstValue(
             ClaimTypes.NameIdentifier

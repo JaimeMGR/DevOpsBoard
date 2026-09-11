@@ -11,18 +11,25 @@ public class IssueService : IIssueService
     private readonly IIssueRepository _issueRepository;
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IIssueAuthorizationService
+        _issueAuthorizationService;
+    private readonly IIssueHistoryRepository
+        _issueHistoryRepository;
 
     public IssueService(
-    IIssueRepository issueRepository,
-    IProjectRepository projectRepository,
-    IUserRepository userRepository,
-    IIssueAuthorizationService issueAuthorizationService)
+        IIssueRepository issueRepository,
+        IProjectRepository projectRepository,
+        IUserRepository userRepository,
+        IIssueAuthorizationService issueAuthorizationService,
+        IIssueHistoryRepository issueHistoryRepository)
     {
         _issueRepository = issueRepository;
         _projectRepository = projectRepository;
         _userRepository = userRepository;
         _issueAuthorizationService =
             issueAuthorizationService;
+        _issueHistoryRepository =
+            issueHistoryRepository;
     }
 
     public async Task<IssueDto> CreateAsync(
@@ -57,10 +64,25 @@ public class IssueService : IIssueService
             );
         }
 
-        var reporter = await _userRepository.GetSummaryByIdAsync(
-            reporterId,
-            cancellationToken
-        );
+        var canCreate =
+            await _issueAuthorizationService.CanCreateAsync(
+                projectId,
+                reporterId,
+                cancellationToken
+            );
+
+        if (!canCreate)
+        {
+            throw new ForbiddenException(
+                "No tienes permisos para crear incidencias en este proyecto."
+            );
+        }
+
+        var reporter =
+            await _userRepository.GetSummaryByIdAsync(
+                reporterId,
+                cancellationToken
+            );
 
         if (reporter is null)
         {
@@ -87,8 +109,22 @@ public class IssueService : IIssueService
             priority
         );
 
+        var correlationId = Guid.NewGuid();
+
+        var history = new IssueHistory(
+            issue.Id,
+            reporterId,
+            correlationId,
+            IssueHistoryAction.Created
+        );
+
         await _issueRepository.AddAsync(
             issue,
+            cancellationToken
+        );
+
+        await _issueHistoryRepository.AddAsync(
+            history,
             cancellationToken
         );
 
@@ -102,8 +138,30 @@ public class IssueService : IIssueService
     public async Task<IssueDto?> GetByIdAsync(
         Guid projectId,
         Guid issueId,
+        string actingUserId,
         CancellationToken cancellationToken = default)
     {
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "El proyecto es obligatorio."
+            );
+        }
+
+        if (issueId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "La incidencia es obligatoria."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(actingUserId))
+        {
+            throw new ValidationException(
+                "El usuario es obligatorio."
+            );
+        }
+
         var project = await _projectRepository.GetByIdAsync(
             projectId,
             cancellationToken
@@ -116,17 +174,27 @@ public class IssueService : IIssueService
             );
         }
 
+        var canView =
+            await _issueAuthorizationService.CanViewAsync(
+                projectId,
+                actingUserId,
+                cancellationToken
+            );
+
+        if (!canView)
+        {
+            throw new ForbiddenException(
+                "No tienes permisos para consultar este proyecto."
+            );
+        }
+
         var issue = await _issueRepository.GetByIdAsync(
             issueId,
             cancellationToken
         );
 
-        if (issue is null)
-        {
-            return null;
-        }
-
-        if (issue.ProjectId != projectId)
+        if (issue is null ||
+            issue.ProjectId != projectId)
         {
             return null;
         }
@@ -134,10 +202,26 @@ public class IssueService : IIssueService
         return MapToDto(issue);
     }
 
-    public async Task<IReadOnlyList<IssueDto>> GetByProjectIdAsync(
-        Guid projectId,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<IssueDto>>
+        GetByProjectIdAsync(
+            Guid projectId,
+            string actingUserId,
+            CancellationToken cancellationToken = default)
     {
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "El proyecto es obligatorio."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(actingUserId))
+        {
+            throw new ValidationException(
+                "El usuario es obligatorio."
+            );
+        }
+
         var project = await _projectRepository.GetByIdAsync(
             projectId,
             cancellationToken
@@ -147,6 +231,20 @@ public class IssueService : IIssueService
         {
             throw new NotFoundException(
                 "El proyecto no existe."
+            );
+        }
+
+        var canView =
+            await _issueAuthorizationService.CanViewAsync(
+                projectId,
+                actingUserId,
+                cancellationToken
+            );
+
+        if (!canView)
+        {
+            throw new ForbiddenException(
+                "No tienes permisos para consultar este proyecto."
             );
         }
 
@@ -161,32 +259,12 @@ public class IssueService : IIssueService
             .ToList();
     }
 
-    private static IssueDto MapToDto(
-        Issue issue)
-    {
-        return new IssueDto(
-            issue.Id,
-            issue.ProjectId,
-            issue.Title,
-            issue.Description,
-            issue.Status.ToString(),
-            issue.Priority.ToString(),
-            issue.ReporterId,
-            issue.AssigneeId,
-            issue.CreatedAt,
-            issue.UpdatedAt
-        );
-    }
-
-    private readonly IIssueAuthorizationService
-    _issueAuthorizationService;
-
     public async Task<IssueDto> UpdateAsync(
-    Guid projectId,
-    Guid issueId,
-    UpdateIssueRequest request,
-    string actingUserId,
-    CancellationToken cancellationToken = default)
+        Guid projectId,
+        Guid issueId,
+        UpdateIssueRequest request,
+        string actingUserId,
+        CancellationToken cancellationToken = default)
     {
         if (projectId == Guid.Empty)
         {
@@ -249,6 +327,19 @@ public class IssueService : IIssueService
             );
         }
 
+        var normalizedTitle =
+            request.Title.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedTitle))
+        {
+            throw new ValidationException(
+                "El título de la incidencia es obligatorio."
+            );
+        }
+
+        var normalizedDescription =
+            request.Description?.Trim();
+
         if (!Enum.TryParse<IssueStatus>(
                 request.Status,
                 true,
@@ -269,18 +360,17 @@ public class IssueService : IIssueService
             );
         }
 
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            throw new ValidationException(
-                "El título de la incidencia es obligatorio."
-            );
-        }
+        var normalizedAssigneeId =
+            string.IsNullOrWhiteSpace(
+                request.AssigneeId)
+                ? null
+                : request.AssigneeId.Trim();
 
-        if (!string.IsNullOrWhiteSpace(request.AssigneeId))
+        if (normalizedAssigneeId is not null)
         {
             var assignee =
                 await _userRepository.GetSummaryByIdAsync(
-                    request.AssigneeId,
+                    normalizedAssigneeId,
                     cancellationToken
                 );
 
@@ -292,24 +382,119 @@ public class IssueService : IIssueService
             }
         }
 
-        issue.Update(
-            request.Title,
-            request.Description
-        );
+        var correlationId = Guid.NewGuid();
 
-        issue.ChangeStatus(status);
-        issue.ChangePriority(priority);
+        if (issue.Title != normalizedTitle)
+        {
+            var oldValue = issue.Title;
 
-        if (string.IsNullOrWhiteSpace(
-                request.AssigneeId))
-        {
-            issue.Unassign();
-        }
-        else
-        {
-            issue.AssignTo(
-                request.AssigneeId
+            issue.Update(
+                normalizedTitle,
+                issue.Description
             );
+
+            await AddHistoryAsync(
+                issue.Id,
+                actingUserId,
+                correlationId,
+                IssueHistoryAction.TitleChanged,
+                oldValue,
+                normalizedTitle,
+                cancellationToken
+            );
+        }
+
+        if (issue.Description != normalizedDescription)
+        {
+            var oldValue = issue.Description;
+
+            issue.Update(
+                issue.Title,
+                normalizedDescription
+            );
+
+            await AddHistoryAsync(
+                issue.Id,
+                actingUserId,
+                correlationId,
+                IssueHistoryAction.DescriptionChanged,
+                oldValue,
+                normalizedDescription,
+                cancellationToken
+            );
+        }
+
+        if (issue.Status != status)
+        {
+            var oldValue =
+                issue.Status.ToString();
+
+            issue.ChangeStatus(status);
+
+            await AddHistoryAsync(
+                issue.Id,
+                actingUserId,
+                correlationId,
+                IssueHistoryAction.StatusChanged,
+                oldValue,
+                status.ToString(),
+                cancellationToken
+            );
+        }
+
+        if (issue.Priority != priority)
+        {
+            var oldValue =
+                issue.Priority.ToString();
+
+            issue.ChangePriority(priority);
+
+            await AddHistoryAsync(
+                issue.Id,
+                actingUserId,
+                correlationId,
+                IssueHistoryAction.PriorityChanged,
+                oldValue,
+                priority.ToString(),
+                cancellationToken
+            );
+        }
+
+        if (issue.AssigneeId != normalizedAssigneeId)
+        {
+            var oldValue =
+                issue.AssigneeId;
+
+            if (normalizedAssigneeId is null)
+            {
+                issue.Unassign();
+
+                await AddHistoryAsync(
+                    issue.Id,
+                    actingUserId,
+                    correlationId,
+                    IssueHistoryAction.Unassigned,
+                    oldValue,
+                    null,
+                    cancellationToken
+                );
+            }
+            else
+            {
+                issue.AssignTo(
+                    normalizedAssigneeId
+                );
+
+                await AddHistoryAsync(
+                    issue.Id,
+                    actingUserId,
+                    correlationId,
+                    IssueHistoryAction.Assigned,
+                    oldValue,
+                    normalizedAssigneeId,
+                    cancellationToken
+                );
+            }
         }
 
         await _issueRepository.SaveChangesAsync(
@@ -320,10 +505,10 @@ public class IssueService : IIssueService
     }
 
     public async Task DeleteAsync(
-    Guid projectId,
-    Guid issueId,
-    string actingUserId,
-    CancellationToken cancellationToken = default)
+        Guid projectId,
+        Guid issueId,
+        string actingUserId,
+        CancellationToken cancellationToken = default)
     {
         if (projectId == Guid.Empty)
         {
@@ -386,10 +571,65 @@ public class IssueService : IIssueService
             );
         }
 
-        _issueRepository.Remove(issue);
+        var correlationId = Guid.NewGuid();
+
+        issue.Delete();
+
+        var history = new IssueHistory(
+            issue.Id,
+            actingUserId,
+            correlationId,
+            IssueHistoryAction.Deleted
+        );
+
+        await _issueHistoryRepository.AddAsync(
+            history,
+            cancellationToken
+        );
 
         await _issueRepository.SaveChangesAsync(
             cancellationToken
+        );
+    }
+
+    private async Task AddHistoryAsync(
+        Guid issueId,
+        string actorId,
+        Guid correlationId,
+        IssueHistoryAction action,
+        string? oldValue,
+        string? newValue,
+        CancellationToken cancellationToken)
+    {
+        var history = new IssueHistory(
+            issueId,
+            actorId,
+            correlationId,
+            action,
+            oldValue,
+            newValue
+        );
+
+        await _issueHistoryRepository.AddAsync(
+            history,
+            cancellationToken
+        );
+    }
+
+    private static IssueDto MapToDto(
+        Issue issue)
+    {
+        return new IssueDto(
+            issue.Id,
+            issue.ProjectId,
+            issue.Title,
+            issue.Description,
+            issue.Status.ToString(),
+            issue.Priority.ToString(),
+            issue.ReporterId,
+            issue.AssigneeId,
+            issue.CreatedAt,
+            issue.UpdatedAt
         );
     }
 }

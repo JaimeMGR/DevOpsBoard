@@ -112,6 +112,18 @@ public static class DependencyInjection
             )
         );
 
+        services.AddScoped<
+            IIssueHistoryService,
+            IssueHistoryService
+        >();
+
+        services.AddScoped<
+            IIssueHistoryRepository,
+            IssueHistoryRepository
+        >();
+
+        services.AddScoped<IIssueRepository, IssueRepository>();
+
         services.AddScoped<JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
 

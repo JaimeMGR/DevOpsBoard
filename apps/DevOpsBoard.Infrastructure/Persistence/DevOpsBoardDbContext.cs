@@ -23,7 +23,10 @@ public class DevOpsBoardDbContext
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
     public DbSet<Issue> Issues => Set<Issue>();
-    
+
+    public DbSet<IssueHistory> IssueHistories =>
+    Set<IssueHistory>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {

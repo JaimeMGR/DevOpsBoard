@@ -35,7 +35,7 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -119,12 +119,12 @@ public class IssueServiceTests
             var authorizationService =
                 new FakeIssueAuthorizationService(true);
 
-            var service = new IssueService(
-                issueRepository,
-                projectRepository,
-                userRepository,
-                authorizationService
-            );
+            var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService
+        );
 
             var request = new CreateIssueRequest(
                 "Issue",
@@ -162,7 +162,7 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -201,7 +201,7 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -244,7 +244,7 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -267,6 +267,57 @@ public class IssueServiceTests
 
         Assert.Empty(
             issueRepository.Issues
+        );
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldThrowForbidden_WhenNotAuthorized()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(false);
+
+        var historyRepository =
+            new FakeIssueHistoryRepository();
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService,
+            historyRepository
+        );
+
+        var request = new CreateIssueRequest(
+            "Unauthorized issue",
+            null,
+            "Medium"
+        );
+
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => service.CreateAsync(
+                ProjectId,
+                request,
+                ReporterId
+            )
+        );
+
+        Assert.Empty(
+            issueRepository.Issues
+        );
+
+        Assert.Empty(
+            historyRepository.Histories
         );
     }
 
@@ -307,7 +358,7 @@ public class IssueServiceTests
             )
         );
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -316,8 +367,9 @@ public class IssueServiceTests
 
         var result =
             await service.GetByProjectIdAsync(
-                ProjectId
-            );
+            ProjectId,
+            ReporterId
+        );
 
         Assert.Equal(
             2,
@@ -352,7 +404,7 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -361,8 +413,9 @@ public class IssueServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => service.GetByProjectIdAsync(
-                OtherProjectId
-            )
+            OtherProjectId,
+            ReporterId
+        )
         );
     }
 
@@ -395,7 +448,7 @@ public class IssueServiceTests
             issue
         );
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -405,7 +458,8 @@ public class IssueServiceTests
         var result =
             await service.GetByIdAsync(
                 ProjectId,
-                issue.Id
+                issue.Id,
+                ReporterId
             );
 
         Assert.NotNull(result);
@@ -448,7 +502,7 @@ public class IssueServiceTests
             issue
         );
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -457,9 +511,10 @@ public class IssueServiceTests
 
         var result =
             await service.GetByIdAsync(
-                ProjectId,
-                issue.Id
-            );
+            ProjectId,
+            Guid.NewGuid(),
+            ReporterId
+        );
 
         Assert.Null(result);
     }
@@ -481,7 +536,7 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -490,9 +545,10 @@ public class IssueServiceTests
 
         var result =
             await service.GetByIdAsync(
-                ProjectId,
-                Guid.NewGuid()
-            );
+            ProjectId,
+            Guid.NewGuid(),
+            ReporterId
+        );
 
         Assert.Null(result);
     }
@@ -524,7 +580,7 @@ public class IssueServiceTests
 
         await issueRepository.AddAsync(issue);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -607,7 +663,7 @@ public class IssueServiceTests
 
         await issueRepository.AddAsync(issue);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -667,7 +723,7 @@ public class IssueServiceTests
 
         await issueRepository.AddAsync(issue);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -717,7 +773,7 @@ public class IssueServiceTests
 
         await issueRepository.AddAsync(issue);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -767,7 +823,7 @@ public class IssueServiceTests
 
         await issueRepository.AddAsync(issue);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -793,7 +849,7 @@ public class IssueServiceTests
     }
 
     [Fact]
-    public async Task DeleteAsync_ShouldDeleteIssue_WhenAuthorized()
+    public async Task DeleteAsync_ShouldSoftDeleteIssue_WhenAuthorized()
     {
         var issueRepository =
             new FakeIssueRepository();
@@ -809,6 +865,9 @@ public class IssueServiceTests
         var authorizationService =
             new FakeIssueAuthorizationService(true);
 
+        var historyRepository =
+            new FakeIssueHistoryRepository();
+
         var issue = new Issue(
             ProjectId,
             "Issue to delete",
@@ -821,7 +880,8 @@ public class IssueServiceTests
             issueRepository,
             projectRepository,
             userRepository,
-            authorizationService
+            authorizationService,
+            historyRepository
         );
 
         await service.DeleteAsync(
@@ -830,8 +890,46 @@ public class IssueServiceTests
             ReporterId
         );
 
-        Assert.Empty(
+        Assert.Single(
             issueRepository.Issues
+        );
+
+        Assert.True(
+            issue.IsDeleted
+        );
+
+        Assert.NotNull(
+            issue.DeletedAt
+        );
+
+        Assert.Single(
+            historyRepository.Histories
+        );
+
+        var history =
+            historyRepository.Histories[0];
+
+        Assert.Equal(
+            issue.Id,
+            history.IssueId
+        );
+
+        Assert.Equal(
+            ReporterId,
+            history.ActorId
+        );
+
+        Assert.Equal(
+            IssueHistoryAction.Deleted,
+            history.Action
+        );
+
+        Assert.Null(
+            history.OldValue
+        );
+
+        Assert.Null(
+            history.NewValue
         );
     }
 
@@ -860,7 +958,7 @@ public class IssueServiceTests
 
         await issueRepository.AddAsync(issue);
 
-        var service = new IssueService(
+        var service = CreateService(
             issueRepository,
             projectRepository,
             userRepository,
@@ -880,7 +978,451 @@ public class IssueServiceTests
         );
     }
 
-    
+    [Fact]
+    public async Task CreateAsync_ShouldCreateHistory()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        var historyRepository =
+            new FakeIssueHistoryRepository();
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService,
+            historyRepository
+        );
+
+        var request = new CreateIssueRequest(
+            "Issue with history",
+            "Test history creation",
+            "High"
+        );
+
+        var result = await service.CreateAsync(
+            ProjectId,
+            request,
+            ReporterId
+        );
+
+        Assert.Single(
+            historyRepository.Histories
+        );
+
+        var history =
+            historyRepository.Histories[0];
+
+        Assert.Equal(
+            result.Id,
+            history.IssueId
+        );
+
+        Assert.Equal(
+            ReporterId,
+            history.ActorId
+        );
+
+        Assert.Equal(
+            IssueHistoryAction.Created,
+            history.Action
+        );
+
+        Assert.Null(
+            history.OldValue
+        );
+
+        Assert.Null(
+            history.NewValue
+        );
+
+        Assert.NotEqual(
+            Guid.Empty,
+            history.CorrelationId
+        );
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldCreateHistoryForChangedFields()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        var historyRepository =
+            new FakeIssueHistoryRepository();
+
+        var issue = new Issue(
+            ProjectId,
+            "Old title",
+            ReporterId,
+            "Old description",
+            IssuePriority.Low
+        );
+
+        await issueRepository.AddAsync(
+            issue
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService,
+            historyRepository
+        );
+
+        var request = new UpdateIssueRequest(
+            "New title",
+            "New description",
+            "InProgress",
+            "Critical",
+            ReporterId
+        );
+
+        await service.UpdateAsync(
+            ProjectId,
+            issue.Id,
+            request,
+            ReporterId
+        );
+
+        Assert.Equal(
+            5,
+            historyRepository.Histories.Count
+        );
+
+        Assert.Contains(
+            historyRepository.Histories,
+            history =>
+                history.Action ==
+                IssueHistoryAction.TitleChanged &&
+                history.OldValue == "Old title" &&
+                history.NewValue == "New title"
+        );
+
+        Assert.Contains(
+            historyRepository.Histories,
+            history =>
+                history.Action ==
+                IssueHistoryAction.DescriptionChanged &&
+                history.OldValue == "Old description" &&
+                history.NewValue == "New description"
+        );
+
+        Assert.Contains(
+            historyRepository.Histories,
+            history =>
+                history.Action ==
+                IssueHistoryAction.StatusChanged &&
+                history.OldValue == "Todo" &&
+                history.NewValue == "InProgress"
+        );
+
+        Assert.Contains(
+            historyRepository.Histories,
+            history =>
+                history.Action ==
+                IssueHistoryAction.PriorityChanged &&
+                history.OldValue == "Low" &&
+                history.NewValue == "Critical"
+        );
+
+        Assert.Contains(
+            historyRepository.Histories,
+            history =>
+                history.Action ==
+                IssueHistoryAction.Assigned &&
+                history.OldValue == null &&
+                history.NewValue == ReporterId
+        );
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldUseSameCorrelationIdForSingleOperation()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        var historyRepository =
+            new FakeIssueHistoryRepository();
+
+        var issue = new Issue(
+            ProjectId,
+            "Old title",
+            ReporterId,
+            "Old description",
+            IssuePriority.Low
+        );
+
+        await issueRepository.AddAsync(
+            issue
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService,
+            historyRepository
+        );
+
+        var request = new UpdateIssueRequest(
+            "New title",
+            "New description",
+            "InProgress",
+            "Critical",
+            ReporterId
+        );
+
+        await service.UpdateAsync(
+            ProjectId,
+            issue.Id,
+            request,
+            ReporterId
+        );
+
+        Assert.NotEmpty(
+            historyRepository.Histories
+        );
+
+        var correlationIds =
+            historyRepository.Histories
+                .Select(
+                    history => history.CorrelationId
+                )
+                .Distinct()
+                .ToList();
+
+        Assert.Single(
+            correlationIds
+        );
+
+        Assert.NotEqual(
+            Guid.Empty,
+            correlationIds[0]
+        );
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldCreateUnassignedHistory()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        var historyRepository =
+            new FakeIssueHistoryRepository();
+
+        var issue = new Issue(
+            ProjectId,
+            "Issue",
+            ReporterId
+        );
+
+        issue.AssignTo(
+            ReporterId
+        );
+
+        await issueRepository.AddAsync(
+            issue
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService,
+            historyRepository
+        );
+
+        var request = new UpdateIssueRequest(
+            "Issue",
+            null,
+            "Todo",
+            "Medium",
+            null
+        );
+
+        await service.UpdateAsync(
+            ProjectId,
+            issue.Id,
+            request,
+            ReporterId
+        );
+
+        Assert.Single(
+            historyRepository.Histories
+        );
+
+        var history =
+            historyRepository.Histories[0];
+
+        Assert.Equal(
+            IssueHistoryAction.Unassigned,
+            history.Action
+        );
+
+        Assert.Equal(
+            ReporterId,
+            history.OldValue
+        );
+
+        Assert.Null(
+            history.NewValue
+        );
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ShouldThrowForbidden_WhenUserIsNotAuthorized()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(false);
+
+        var issue = new Issue(
+            ProjectId,
+            "Protected issue",
+            ReporterId
+        );
+
+        await issueRepository.AddAsync(
+            issue
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService
+        );
+
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => service.GetByIdAsync(
+                ProjectId,
+                issue.Id,
+                ReporterId
+            )
+        );
+    }
+
+    [Fact]
+    public async Task GetByProjectIdAsync_ShouldReturnIssues_WhenUserIsAuthorized()
+    {
+        var issueRepository =
+            new FakeIssueRepository();
+
+        var projectRepository =
+            new FakeProjectRepository();
+
+        var userRepository =
+            new FakeUserRepository(
+                ReporterId
+            );
+
+        var authorizationService =
+            new FakeIssueAuthorizationService(true);
+
+        var issue = new Issue(
+            ProjectId,
+            "Visible issue",
+            ReporterId
+        );
+
+        await issueRepository.AddAsync(
+            issue
+        );
+
+        var service = CreateService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService
+        );
+
+        var result =
+            await service.GetByProjectIdAsync(
+                ProjectId,
+                ReporterId
+            );
+
+        Assert.Single(result);
+
+        Assert.Equal(
+            issue.Id,
+            result[0].Id
+        );
+    }
+
+    private static IssueService CreateService(
+    IIssueRepository issueRepository,
+    IProjectRepository projectRepository,
+    IUserRepository userRepository,
+    IIssueAuthorizationService authorizationService,
+    IIssueHistoryRepository? historyRepository = null)
+    {
+        return new IssueService(
+            issueRepository,
+            projectRepository,
+            userRepository,
+            authorizationService,
+            historyRepository
+                ?? new FakeIssueHistoryRepository()
+        );
+    }
 
     private sealed class FakeIssueRepository
         : IIssueRepository
@@ -1054,15 +1596,81 @@ public class IssueServiceTests
         }
     }
 
+    private sealed class FakeIssueHistoryRepository
+    : IIssueHistoryRepository
+    {
+        public List<IssueHistory> Histories { get; } = [];
+
+        public Task AddAsync(
+            IssueHistory history,
+            CancellationToken cancellationToken = default)
+        {
+            Histories.Add(history);
+
+            return Task.CompletedTask;
+        }
+
+        public Task<
+            IReadOnlyList<IssueHistoryReadModel>
+        > GetByIssueIdAsync(
+            Guid issueId,
+            CancellationToken cancellationToken = default)
+        {
+            var result = Histories
+                .Where(
+                    history => history.IssueId == issueId
+                )
+                .Select(
+                    history =>
+                        new IssueHistoryReadModel(
+                            history.Id,
+                            history.IssueId,
+                            history.ActorId,
+                            "Actor",
+                            "actor@devopsboard.local",
+                            history.Action.ToString(),
+                            history.OldValue,
+                            history.NewValue,
+                            history.CorrelationId,
+                            history.CreatedAt
+                        )
+                )
+                .ToList();
+
+            return Task.FromResult<
+                IReadOnlyList<IssueHistoryReadModel>
+            >(result);
+        }
+    }
+
     private sealed class FakeIssueAuthorizationService
         : IIssueAuthorizationService
     {
         private readonly bool _canModify;
 
+        public Task<bool> CanViewAsync(
+            Guid projectId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                _canModify
+            );
+        }
         public FakeIssueAuthorizationService(
             bool canModify)
         {
             _canModify = canModify;
+        }
+
+        public Task<bool> CanCreateAsync(
+            Guid projectId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                _canModify
+            );
         }
 
         public Task<bool> CanModifyAsync(

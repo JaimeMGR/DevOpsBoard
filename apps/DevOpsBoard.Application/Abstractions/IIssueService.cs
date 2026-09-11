@@ -14,11 +14,13 @@ public interface IIssueService
     Task<IssueDto?> GetByIdAsync(
         Guid projectId,
         Guid issueId,
+        string actingUserId,
         CancellationToken cancellationToken = default
     );
 
     Task<IReadOnlyList<IssueDto>> GetByProjectIdAsync(
         Guid projectId,
+        string actingUserId,
         CancellationToken cancellationToken = default
     );
 

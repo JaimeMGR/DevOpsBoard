@@ -8,6 +8,43 @@ public class IssueTests
     private static readonly Guid ProjectId =
         Guid.NewGuid();
 
+    [Fact]
+    public void Delete_ShouldMarkIssueAsDeleted()
+    {
+        var issue = new Issue(
+            ProjectId,
+            "Issue",
+            ReporterId
+        );
+
+        issue.Delete();
+
+        Assert.True(issue.IsDeleted);
+        Assert.NotNull(issue.DeletedAt);
+    }
+
+    [Fact]
+    public void Delete_ShouldBeIdempotent()
+    {
+        var issue = new Issue(
+            ProjectId,
+            "Issue",
+            ReporterId
+        );
+
+        issue.Delete();
+
+        var deletedAt = issue.DeletedAt;
+
+        issue.Delete();
+
+        Assert.True(issue.IsDeleted);
+        Assert.Equal(
+            deletedAt,
+            issue.DeletedAt
+        );
+    }
+
     private const string ReporterId =
         "reporter-user-id";
 

@@ -48,6 +48,11 @@ public class IssueConfiguration
         builder.Property(issue => issue.UpdatedAt)
             .IsRequired();
 
+        builder.Property(issue => issue.IsDeleted)
+            .IsRequired();
+
+        builder.Property(issue => issue.DeletedAt);
+
         builder.HasOne<Project>()
             .WithMany()
             .HasForeignKey(issue => issue.ProjectId)
@@ -72,5 +77,11 @@ public class IssueConfiguration
         builder.HasIndex(issue => issue.Status);
 
         builder.HasIndex(issue => issue.Priority);
+
+        builder.HasIndex(issue => issue.IsDeleted);
+
+        builder.HasQueryFilter(
+            issue => !issue.IsDeleted
+        );
     }
 }
