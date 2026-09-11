@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="DevOpsBoard.Api/DevOpsBoard.Api.csproj" />
+  <Project Path="DevOpsBoard.Application/DevOpsBoard.Application.csproj" />
+  <Project Path="DevOpsBoard.Domain/DevOpsBoard.Domain.csproj" />
+  <Project Path="DevOpsBoard.Infrastructure/DevOpsBoard.Infrastructure.csproj" />
+  <Project Path="DevOpsBoard.Tests/DevOpsBoard.Tests.csproj" />
+</Solution>

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: devopsboard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: devopsboard
+      POSTGRES_USER: devopsboard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - devopsboard-postgres-data:/var/lib/postgresql
+
+volumes:
+  devopsboard-postgres-data:

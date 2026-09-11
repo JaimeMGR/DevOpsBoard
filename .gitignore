@@ -1,0 +1,324 @@
+# =========================================================
+# DevOpsBoard - Git Ignore
+# .NET + React/TypeScript + Vite + Docker + VS Code
+# =========================================================
+
+
+# =========================================================
+# ENVIRONMENT / SECRETS
+# =========================================================
+
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Certificates / private keys
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+
+# Local secrets
+secrets/
+*.secret
+*.credentials
+
+
+# =========================================================
+# .NET / ASP.NET CORE
+# =========================================================
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Ww][Ii][Nn]32/
+
+# Build / generated files
+artifacts/
+publish/
+Generated\ Files/
+
+# Logs
+[Ll]og/
+[Ll]ogs/
+*.log
+*.binlog
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# NuGet/project lock files
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+
+# ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+# Coverage
+coverage/
+TestResults/
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# EF / local database artifacts
+*.db
+*.db-shm
+*.db-wal
+
+
+# =========================================================
+# VISUAL STUDIO
+# =========================================================
+
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.userprefs
+
+
+# =========================================================
+# RIDER / JETBRAINS
+# =========================================================
+
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+
+# =========================================================
+# VS CODE
+# =========================================================
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+*.code-workspace
+.history/
+.localhistory/
+
+
+# =========================================================
+# NODE / NPM / VITE
+# =========================================================
+
+node_modules/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite / frontend builds
+dist/
+.vite/
+
+# Frontend cache
+.eslintcache
+*.tsbuildinfo
+
+
+# =========================================================
+# DOCKER
+# =========================================================
+
+# Local Docker files
+docker-data/
+docker-volumes/
+
+# Docker override files
+docker-compose.override.yml
+
+# Docker logs
+docker/*.log
+*.docker.log
+
+
+# =========================================================
+# TYPESCRIPT
+# =========================================================
+
+*.tsbuildinfo
+
+
+# =========================================================
+# PYTHON
+# =========================================================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+.venv/
+venv/
+env/
+ENV/
+
+pip-wheel-metadata/
+*.egg-info/
+
+
+# =========================================================
+# TESTING / COVERAGE
+# =========================================================
+
+.nyc_output/
+coverage/
+.coverage
+htmlcov/
+
+
+# =========================================================
+# OS FILES
+# =========================================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+
+# =========================================================
+# TEMPORARY / BACKUP FILES
+# =========================================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+
+~$*
+*.pid
+*.pidb
+*.seed
+
+
+# =========================================================
+# VISUAL STUDIO / BUILD TOOLS
+# =========================================================
+
+*.pdb
+*.ipdb
+*.opendb
+*.cache
+*.ilk
+*.iobj
+*.pch
+*.obj
+*.rsp
+
+Generated_Code/
+BenchmarkDotNet.Artifacts/
+OpenCover/
+NCrunch_*
+nCrunchTemp_*
+
+
+# =========================================================
+# AZURE / PUBLISHING
+# =========================================================
+
+*.publish.xml
+*.pubxml
+*.publishproj
+PublishScripts/
+*.publishsettings
+
+# Azure local artifacts
+csx/
+ecf/
+rcf/
+
+
+# =========================================================
+# OTHER .NET TOOLS
+# =========================================================
+
+.tye/
+.paket/
+paket-files/
+.fake/
+.cr/
+.mfractor/
+.ionide/
+TeamCity/
+_TeamCity/
+
+
+# =========================================================
+# STRONG NAME / CERTIFICATE FILES
+# =========================================================
+
+*.snk
+
+
+# =========================================================
+# LOCAL DATABASE / DATA FILES
+# =========================================================
+
+# SQLite
+*.sqlite
+*.sqlite3
+
+# Local SQL dumps - do not commit by accident
+*.sql.bak
+*.sql.tmp
+
+
+# =========================================================
+# GENERATED DOCUMENTATION
+# =========================================================
+
+docs/_build/
+docs/.cache/
+
+
+.env
