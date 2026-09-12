@@ -39,15 +39,22 @@ public class ProjectService : IProjectService
             );
         }
 
+        var normalizedKey =
+            request.Key.Trim().ToUpperInvariant();
+
+        if (normalizedKey.Length > 10)
+        {
+            throw new ValidationException(
+                "La clave del proyecto no puede superar los 10 caracteres."
+            );
+        }
+
         if (string.IsNullOrWhiteSpace(ownerId))
         {
             throw new ValidationException(
                 "El propietario del proyecto es obligatorio."
             );
         }
-
-        var normalizedKey =
-            request.Key.Trim().ToUpperInvariant();
 
         var exists = await _projectRepository.ExistsByKeyAsync(
             normalizedKey,
