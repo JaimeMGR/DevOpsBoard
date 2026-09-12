@@ -400,6 +400,22 @@ public class ProjectServiceTests
             _canManage = canManage;
         }
 
+        public Task<bool> CanViewAsync(
+            Guid projectId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_canManage);
+        }
+
+        public Task<bool> CanManageSettingsAsync(
+            Guid projectId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_canManage);
+        }
+        
         public Task<bool> CanManageAsync(
             Guid projectId,
             string userId,

@@ -1,3 +1,4 @@
+using DevOpsBoard.Domain.Enums;
 using DevOpsBoard.Application.Abstractions;
 using DevOpsBoard.Application.Security;
 using DevOpsBoard.Infrastructure.Identity;
@@ -51,6 +52,108 @@ public class ProjectAuthorizationService
                 project =>
                     project.Id == projectId &&
                     project.OwnerId == userId,
+                cancellationToken
+            );
+    }
+    public async Task<bool> CanViewAsync(
+    Guid projectId,
+    string userId,
+    CancellationToken cancellationToken = default)
+    {
+        if (projectId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(userId))
+        {
+            return false;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+
+        if (user is null)
+        {
+            return false;
+        }
+
+        if (await _userManager.IsInRoleAsync(
+                user,
+                RoleNames.Admin))
+        {
+            return true;
+        }
+
+        var isOwner =
+            await _dbContext.Projects
+                .AsNoTracking()
+                .AnyAsync(
+                    project =>
+                        project.Id == projectId &&
+                        project.OwnerId == userId,
+                    cancellationToken
+                );
+
+        if (isOwner)
+        {
+            return true;
+        }
+
+        return await _dbContext.ProjectMembers
+            .AsNoTracking()
+            .AnyAsync(
+                member =>
+                    member.ProjectId == projectId &&
+                    member.UserId == userId,
+                cancellationToken
+            );
+    }
+
+    public async Task<bool> CanManageSettingsAsync(
+    Guid projectId,
+    string userId,
+    CancellationToken cancellationToken = default)
+    {
+        if (projectId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(userId))
+        {
+            return false;
+        }
+
+        var user = await _userManager.FindByIdAsync(
+            userId
+        );
+
+        if (user is null)
+        {
+            return false;
+        }
+
+        if (await _userManager.IsInRoleAsync(
+                user,
+                RoleNames.Admin))
+        {
+            return true;
+        }
+
+        var isOwner =
+            await _dbContext.Projects
+                .AsNoTracking()
+                .AnyAsync(
+                    project =>
+                        project.Id == projectId &&
+                        project.OwnerId == userId,
+                    cancellationToken
+                );
+
+        if (isOwner)
+        {
+            return true;
+        }
+
+        return await _dbContext.ProjectMembers
+            .AsNoTracking()
+            .AnyAsync(
+                member =>
+                    member.ProjectId == projectId &&
+                    member.UserId == userId &&
+                    member.Role == ProjectRole.Manager,
                 cancellationToken
             );
     }

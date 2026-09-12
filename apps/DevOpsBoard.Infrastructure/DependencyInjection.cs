@@ -137,11 +137,35 @@ public static class DependencyInjection
             IssueCommentService
         >();
 
+        services.AddScoped<
+            IIssueLabelService,
+            IssueLabelService
+        >();
+
+        services.AddScoped<
+            ILabelRepository,
+            LabelRepository
+        >();
+
+        services.AddScoped<
+            IIssueLabelRepository,
+            IssueLabelRepository
+        >();
+
+        services.AddScoped<
+            ILabelService,
+            LabelService
+        >();
+
         services.AddScoped<JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
 
         services.AddScoped<IIssueRepository, IssueRepository>();
         services.AddScoped<IIssueService, IssueService>();
+
+        services.AddScoped<ILabelRepository, LabelRepository>();
+        services.AddScoped<IIssueLabelRepository, IssueLabelRepository>();
+        services.AddScoped<ILabelService, LabelService>();
 
         return services;
     }

@@ -30,6 +30,12 @@ public class DevOpsBoardDbContext
     public DbSet<IssueComment> IssueComments =>
     Set<IssueComment>();
 
+    public DbSet<Label> Labels =>
+    Set<Label>();
+
+    public DbSet<IssueLabel> IssueLabels =>
+        Set<IssueLabel>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {

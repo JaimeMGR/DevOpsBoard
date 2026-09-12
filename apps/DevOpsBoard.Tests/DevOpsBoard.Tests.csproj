@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.15.0" />
@@ -24,6 +25,7 @@
     <ProjectReference Include="..\DevOpsBoard.Application\DevOpsBoard.Application.csproj" />
     <ProjectReference Include="..\DevOpsBoard.Domain\DevOpsBoard.Domain.csproj" />
     <ProjectReference Include="..\DevOpsBoard.Infrastructure\DevOpsBoard.Infrastructure.csproj" />
+    <ProjectReference Include="..\DevOpsBoard.Api\DevOpsBoard.Api.csproj" />
   </ItemGroup>
 
 </Project>

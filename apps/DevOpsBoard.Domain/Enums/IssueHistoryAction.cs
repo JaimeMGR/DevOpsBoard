@@ -12,5 +12,7 @@ public enum IssueHistoryAction
     CommentAdded,
     CommentEdited,
     CommentDeleted,
-    Deleted
+    Deleted,
+    LabelAdded,
+    LabelRemoved,
 }
